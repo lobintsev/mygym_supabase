@@ -248,7 +248,6 @@ const { data: balanceData, error: balanceCheckError } = await supabase
 .eq('user_id', user_id);
 
 if (balanceCheckError || !balanceData || balanceData.length === 0) {
-// Если запись balance не найдена, создайте новую запись с начальным балансом
 const { error: balanceCreateError } = await supabase
     .from('balance')
     .insert([{ user_id, amount }]);
