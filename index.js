@@ -1,12 +1,13 @@
 const express = require('express');
+require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
-const port = 3000;
+const port = process.env.EXPRESS_PORT;
 app.use(express.json());
 
-const supabaseUrl = 'https://akhdzgwtzroydiqlepey.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraGR6Z3d0enJveWRpcWxlcGV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NTMxMDkzNCwiZXhwIjoyMDEwODg2OTM0fQ.JDX-9zmipaJ28AxVCf6acSyHzDFt5SyN6OrSOG9H5r8';
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 //USERS
