@@ -29,7 +29,7 @@ app.get('/users', async (req, res) => {
 app.post('/users', async (req, res) => {
     const { telegram_id, first_name, last_name, telegram_nickname, phone } = req.body;  
 
-    if (!telegram_id || !first_name || !last_name || !telegram_nickname || !phone) {
+    if (!telegram_id || !first_name || !last_name || !telegram_nickname) {
         res.status(400).send('Bad Request: Missing required fields');
         return;
     }
@@ -57,7 +57,7 @@ app.post('/users', async (req, res) => {
         return;
     }
 
-    res.status(201).json(data);  
+    res.status(201).json(data[0]);  
 });
 
 
@@ -204,7 +204,7 @@ app.get('/users/balance/:telegram_id', async (req, res) => {
         return;
     }
   
-    res.json(actionsQueryResult.data);
+    res.json(actionsQueryResult.data[0]);
 });
 
 app.post('/users/balance/:telegram_id/deposit', async (req, res) => {
