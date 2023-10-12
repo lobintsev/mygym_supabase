@@ -29,7 +29,7 @@ app.get('/users', async (req, res) => {
 app.post('/users', async (req, res) => {
     const { telegram_id, first_name, last_name, telegram_nickname, phone } = req.body;  
 
-    if (!telegram_id || !first_name || !last_name || !telegram_nickname) {
+    if (!telegram_id || !first_name || !last_name ) {
         res.status(400).send('Bad Request: Missing required fields');
         return;
     }
