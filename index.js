@@ -310,6 +310,8 @@ app.get('/users/transactions/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult.data);
 });
 
+//LOCATIONS
+
 app.get('/locations', async (req, res) => {
     const { data, error } = await supabase
         .from('locations')
@@ -322,6 +324,26 @@ app.get('/locations', async (req, res) => {
     }
 
     res.json(data);
+});
+
+app.get('/locations/nearest', async (req, res) => {
+    const { lat, lon } = req.query;
+    if (!lat || !lon) {
+        return res.status(400).send('Latitude and Longitude are required');
+    }
+
+    try {
+        const { data, error } = await supabase.rpc('find_nearest_location', { p_lat: parseFloat(lat), p_lon: parseFloat(lon) });
+        if (error) {
+            console.error(error);
+            res.status(500).send('Server Error');
+        } else {
+            res.json(data[0]);
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Server Error');
+    }
 });
 
 app.listen(port, () => {
