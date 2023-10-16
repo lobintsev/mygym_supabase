@@ -346,6 +346,25 @@ app.get('/locations/nearest', async (req, res) => {
     }
 });
 
+app.post('/locations/unlock', async (req, res) => {
+    const { loc_id } = req.body;  // Получаем loc_id из тела запроса
+
+    if (!loc_id) {
+        return res.status(400).send('Location ID (loc_id) is required');
+    }
+
+    try {
+        await toggleDevice(loc_id);  // Запускаем функцию toggleDevice с loc_id
+        res.status(200).send('Device toggled successfully');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Server Error');
+    }
+
+    // Функция toggleDevice внутри обработчика маршрута
+    async function toggleDevice(loc_id) {process.env.DOOR_SENSOR_ID, 1}
+});
+
 app.listen(port, () => {
     console.log(`App is running at http://localhost:${port}`);
 });
