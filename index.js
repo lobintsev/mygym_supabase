@@ -362,7 +362,7 @@ app.post('/locations/unlock', async (req, res) => {
     }
 
     // Функция toggleDevice внутри обработчика маршрута
-    async function toggleDevice(loc_id) {process.env.DOOR_SENSOR_ID, 1}
+    async function toggleDevice(loc_id) {process.env.DOOR_SENSOR_ID, true}
 });
 
 app.listen(port, () => {
