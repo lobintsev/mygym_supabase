@@ -416,7 +416,7 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
         }
         
         // Отправляем ответ обратно клиенту
-        res.json({ status: response });
+        res.json(response);
     });
 });
 
