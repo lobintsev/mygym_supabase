@@ -364,6 +364,62 @@ app.post('/locations/unlock', async (req, res) => {
     }
 });
 
+//SUBSCRIPTIONS
+
+app.get('/subscriptions', async (req, res) => {
+    const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*');
+
+    if (error) {
+        console.error('Error fetching locations:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.json(data);
+});
+
+
+app.post('/subscriptions/buy/userbalance', async (req, res) => {
+    const { telegram_id, subscription_id } = req.body; 
+
+    if (!telegram_id || !subscription_id) {
+        return res.status(400).send('telegram_id and subscription_id are required');
+    }
+
+    async function buySubscription(telegramId, subscriptionId) {
+        try {
+            const { data, error } = await supabase.rpc('buy_subscription_balance', {
+                p_telegram_id: telegramId,
+                p_subscription_id: subscriptionId
+            });
+    
+            if (error) {
+                console.error('Ошибка:', error);
+                return null;
+            }
+    
+            return data;
+        } catch (err) {
+            console.error('Произошла ошибка при вызове функции:', err);
+            return null;
+        }
+    }
+
+    buySubscription(telegram_id, subscription_id).then(response => {
+        console.log('Response:', response);
+        
+        // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
+        if (response === null) {
+            return res.status(500).send('Internal server error');
+        }
+        
+        // Отправляем ответ обратно клиенту
+        res.json({ status: response });
+    });
+});
+
 app.listen(port, () => {
     console.log(`App is running at http://localhost:${port}`);
 });
