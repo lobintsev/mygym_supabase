@@ -1,6 +1,7 @@
 const express = require('express');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
+const toggleDevice = require('./toggleDevice');
 
 const app = express();
 const port = process.env.EXPRESS_PORT;
@@ -349,19 +350,18 @@ app.get('/locations/nearest', async (req, res) => {
 app.post('/locations/unlock', async (req, res) => {
     const { loc_id } = req.body;  // Получаем loc_id из тела запроса
 
-    if (!loc_id) {
-        return res.status(400).send('Location ID (loc_id) is required');
+    // Проверяем, что loc_id действительно представляет собой строку и не пустой
+    if (!loc_id || typeof loc_id !== 'string' || loc_id.trim() === '') {
+        return res.status(400).send('Неверный формат loc_id');
     }
 
     try {
-        await toggleDevice(process.env.DOOR_SENSOR_ID, true);  // Запускаем функцию toggleDevice с loc_id
-        res.status(200).send('Device toggled successfully');
+        await toggleDevice(process.env.DOOR_SENSOR_ID, true, loc_id);  // Запускаем функцию toggleDevice с loc_id
+        res.status(200).send('Устройство успешно переключено');
     } catch (error) {
-        console.error(error);
-        res.status(500).send('Server Error');
+        console.error('Ошибка при переключении устройства:', error);
+        res.status(500).send('Ошибка сервера');
     }
-
-  
 });
 
 app.listen(port, () => {
