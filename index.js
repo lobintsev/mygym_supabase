@@ -354,15 +354,14 @@ app.post('/locations/unlock', async (req, res) => {
     }
 
     try {
-        await toggleDevice(loc_id);  // Запускаем функцию toggleDevice с loc_id
+        await toggleDevice(process.env.DOOR_SENSOR_ID, true);  // Запускаем функцию toggleDevice с loc_id
         res.status(200).send('Device toggled successfully');
     } catch (error) {
         console.error(error);
         res.status(500).send('Server Error');
     }
 
-    // Функция toggleDevice внутри обработчика маршрута
-    async function toggleDevice(loc_id) {process.env.DOOR_SENSOR_ID, true}
+  
 });
 
 app.listen(port, () => {
