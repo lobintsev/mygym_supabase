@@ -4,7 +4,7 @@ const { createClient } = require('@supabase/supabase-js');
 const toggleDevice = require('./toggleDevice');
 
 const app = express();
-const port = process.env.EXPRESS_PORT;
+const port = process.env.PORT || 3000;
 app.use(express.json());
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -421,5 +421,5 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`App is running at http://localhost:${port}`);
+    console.log(`App is running on http://localhost:${port}`);
 });
