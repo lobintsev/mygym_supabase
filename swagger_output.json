@@ -8,8 +8,8 @@
   "host": "mygym-supabase-zabekaqepq-lz.a.run.app",
   "basePath": "/",
   "schemes": [
-    "http",
-    "https"
+    "https",
+    "http"
   ],
   "consumes": [
     "application/json"
