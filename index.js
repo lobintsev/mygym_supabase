@@ -17,6 +17,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 //USERS
 
 app.get('/users', async (req, res) => {
+    // #swagger.tags = ['Users']
     const { data, error } = await supabase
         .from('users')
         .select('*');
@@ -31,6 +32,7 @@ app.get('/users', async (req, res) => {
 });
 
 app.post('/users', async (req, res) => {
+    // #swagger.tags = ['Users']
     const { telegram_id, first_name, last_name, telegram_nickname, phone } = req.body;  
 
     if (!telegram_id || !first_name || !last_name ) {
@@ -67,6 +69,7 @@ app.post('/users', async (req, res) => {
 
 
 app.get('/users/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
 
     const { data, error } = await supabase
@@ -88,6 +91,7 @@ app.get('/users/:telegram_id', async (req, res) => {
 });
 
 app.patch('/users/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
     const { first_name, last_name, telegram_nickname, phone, email } = req.body;
 
@@ -122,6 +126,7 @@ app.patch('/users/:telegram_id', async (req, res) => {
 });
 
 app.get('/users/actions', async (req, res) => {
+    // #swagger.tags = ['Users']
     const { data, error } = await supabase.from('users').select(`
     id, 
     actions ( id, action )
@@ -137,6 +142,7 @@ app.get('/users/actions', async (req, res) => {
 });
 
 app.get('/users/actions/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
   
 
@@ -175,6 +181,7 @@ app.get('/users/actions/:telegram_id', async (req, res) => {
 
 
 app.get('/users/balance/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
 
     const userQueryResult = await supabase
@@ -212,6 +219,7 @@ app.get('/users/balance/:telegram_id', async (req, res) => {
 });
 
 app.post('/users/balance/:telegram_id/deposit', async (req, res) => {
+    // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
     const { amount } = req.body;
 
@@ -278,6 +286,7 @@ res.status(201).send('Deposit successful');
 });
 
 app.get('/users/transactions/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
   
  
@@ -317,6 +326,7 @@ app.get('/users/transactions/:telegram_id', async (req, res) => {
 //LOCATIONS
 
 app.get('/locations', async (req, res) => {
+    // #swagger.tags = ['Locations']
     const { data, error } = await supabase
         .from('locations')
         .select('*');
@@ -331,6 +341,8 @@ app.get('/locations', async (req, res) => {
 });
 
 app.get('/locations/nearest', async (req, res) => {
+
+    // #swagger.tags = ['Locations']
     const { lat, lon } = req.query;
     if (!lat || !lon) {
         return res.status(400).send('Latitude and Longitude are required');
@@ -351,6 +363,7 @@ app.get('/locations/nearest', async (req, res) => {
 });
 
 app.post('/locations/unlock', async (req, res) => {
+    // #swagger.tags = ['Locations']
     const { loc_id } = req.body;  // Получаем loc_id из тела запроса
 
     // Проверяем, что loc_id действительно представляет собой строку и не пустой
@@ -370,6 +383,7 @@ app.post('/locations/unlock', async (req, res) => {
 //SUBSCRIPTIONS
 
 app.get('/subscriptions', async (req, res) => {
+    // #swagger.tags = ['Subscriptions']
     const { data, error } = await supabase
         .from('subscriptions')
         .select('*');
@@ -385,6 +399,7 @@ app.get('/subscriptions', async (req, res) => {
 
 
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
+    // #swagger.tags = ['Subscriptions']
     const { telegram_id, subscription_id } = req.body; 
 
     if (!telegram_id || !subscription_id) {

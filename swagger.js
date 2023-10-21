@@ -20,6 +20,4 @@ const doc = {
     
 
 
-swaggerAutogen(outputFile, routes, doc).then(() => {
-    require('./index.js'); // Your project's root file
-  });
+swaggerAutogen(outputFile, endpointsFiles, doc)
