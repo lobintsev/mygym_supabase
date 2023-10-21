@@ -2,10 +2,13 @@ const express = require('express');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const toggleDevice = require('./toggleDevice');
+const swaggerUi = require('swagger-ui-express')
+const swaggerFile = require('./swagger_output.json')
 
 const app = express();
 const port = process.env.PORT || 3000;
 app.use(express.json());
+app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
