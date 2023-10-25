@@ -10,7 +10,7 @@ const doc = {
         title: "MyGym BOT API",
         description: "MyGym BOT API Documentation for user-facing endpoints"
     },
-    host: 'https://mygym-supabase-zabekaqepq-lz.a.run.app',
+    host: 'api.mygym.world',
     basePath: "/",
     schemes: ['http', 'https'],
     consumes: ['application/json'],
