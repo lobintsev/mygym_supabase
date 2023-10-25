@@ -8,7 +8,6 @@
   "host": "api.mygym.world",
   "basePath": "/",
   "schemes": [
-    "http",
     "https"
   ],
   "consumes": [
