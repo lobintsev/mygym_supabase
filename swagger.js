@@ -1,8 +1,7 @@
 const swaggerAutogen = require('swagger-autogen')()
-
+require('dotenv').config();
 const outputFile = './swagger_output.json'
 const endpointsFiles = ['./index.js']
-const host = process.env.K_REVISION + '.a.run.app';
 
 const doc = {
     info: {
@@ -10,9 +9,9 @@ const doc = {
         title: "MyGym BOT API",
         description: "MyGym BOT API Documentation for user-facing endpoints"
     },
-    host: 'api.mygym.world',
+    host: (process.env.HOST || 'api.mygym.world'),
     basePath: "/",
-    schemes: ['https'],
+    schemes: ['https', 'http'],
     consumes: ['application/json'],
     produces: ['application/json'],
    

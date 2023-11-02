@@ -323,6 +323,50 @@ app.get('/users/transactions/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult.data);
 });
 
+app.get('/users/subscriptions/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
+    const telegram_id = req.params.telegram_id;
+  
+ 
+    const userQueryResult = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id);
+  
+    if (userQueryResult.error) {
+        console.error('Error fetching user:', userQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+  
+
+    if (!userQueryResult.data || userQueryResult.data.length === 0) {
+        res.status(404).send('User Not Found');
+        return;
+    }
+  
+    const user_id = userQueryResult.data[0].id;
+
+    const actionsQueryResult = await supabase
+    .from('user_subscriptions')
+    .select(`
+      *, 
+      subscriptions (
+        *
+      )
+    `)
+    .eq('user_id', user_id)
+    .gte('finish', new Date().toISOString()); 
+  
+    if (actionsQueryResult.error) {
+        console.error('Error fetching balance:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+  
+    res.json(actionsQueryResult.data);
+});
+
 //LOCATIONS
 
 app.get('/locations', async (req, res) => {
