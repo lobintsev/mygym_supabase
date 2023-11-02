@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 async function testDeposit() {
-    const telegram_id = '12345344543434344';  // Замените на ваш telegram_id
+    const telegram_id = '123453444545543434344';  // Замените на ваш telegram_id
     const depositAmount = 100;  // Сумма депозита
 
     try {

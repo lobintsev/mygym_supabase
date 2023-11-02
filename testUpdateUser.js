@@ -3,7 +3,7 @@ const axios = require('axios');
 async function testUpdateUser() {
     try {
         // Измените этот ID на ID пользователя, которого вы хотите обновить
-        const telegram_id = 1234534543424343454;
+        const telegram_id = 123453445434343;
         
         const response = await axios.patch(`http://localhost:3000/users/${telegram_id}`, {
           
