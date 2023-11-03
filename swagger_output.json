@@ -5,7 +5,7 @@
     "title": "MyGym BOT API",
     "description": "MyGym BOT API Documentation for user-facing endpoints"
   },
-  "host": "localhost:8080",
+  "host": "api.mygym.world:8080",
   "basePath": "/",
   "schemes": [
     "https",
@@ -595,6 +595,9 @@
         "responses": {
           "200": {
             "description": "OK"
+          },
+          "500": {
+            "description": "Internal Server Error"
           }
         }
       }
