@@ -9,7 +9,7 @@ const doc = {
         title: "MyGym BOT API",
         description: "MyGym BOT API Documentation for user-facing endpoints"
     },
-    host: `${process.env.HOST}:${process.env.PORT || 'api.mygym.world'}`,
+    host: `${process.env.HOST || api.mygym.world}:${process.env.PORT}`,
     basePath: "/",
     schemes: ['https', 'http'],
     consumes: ['application/json'],
