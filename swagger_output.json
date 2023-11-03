@@ -5,7 +5,7 @@
     "title": "MyGym BOT API",
     "description": "MyGym BOT API Documentation for user-facing endpoints"
   },
-  "host": "localhost:3000",
+  "host": "api.mygym.world",
   "basePath": "/",
   "schemes": [
     "https",
@@ -293,6 +293,33 @@
       }
     },
     "/users/subscriptions/{telegram_id}": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "name": "telegram_id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error"
+          }
+        }
+      }
+    },
+    "/users/subscriptions/status/{telegram_id}": {
       "get": {
         "tags": [
           "Users"
