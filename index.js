@@ -4,6 +4,8 @@ const { createClient } = require('@supabase/supabase-js');
 const toggleDevice = require('./toggleDevice');
 const swaggerUi = require('swagger-ui-express')
 const swaggerFile = require('./swagger_output.json')
+const initPayment = require('./src/helpers/tinkoff/init.js');
+const { stat } = require('fs');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -528,6 +530,191 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
         // Отправляем ответ обратно клиенту
         res.json(response);
     });
+});
+
+
+//ORDERS
+
+app.post('/orders/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Orders']
+    const telegram_id = req.params.telegram_id;
+    const { amount } = req.body;
+
+    // Проверка входных данных
+    if (!amount || isNaN(amount) || amount <= 0) {
+        res.status(400).send('Bad Request: Invalid amount');
+        return;
+    }
+
+    // Получить user_id из таблицы users
+    const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id);
+
+    if (userError || !userData || userData.length === 0) {
+        console.error('Error fetching user:', userError || 'User not found');
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    const user_id = userData[0].id;
+
+    // Создать новую запись в таблице orders и получить данные созданного заказа
+    const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert([{ user_id, amount, status: 'NEW' }])
+        .select();
+
+    if (orderError) {
+        console.error('Error creating order:', orderError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    // Отправляем данные созданного заказа в ответе
+    res.status(201).json(orderData);
+});
+
+app.get('/orders/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Orders']
+    const telegram_id = req.params.telegram_id;
+
+
+  
+
+    // Получить user_id из таблицы users
+    const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id);
+
+    if (userError || !userData || userData.length === 0) {
+        console.error('Error fetching user:', userError || 'User not found');
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    const user_id = userData[0].id;
+
+    // Прочесть запись в таблице orders и получить данные созданного заказа
+    const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select()
+        .eq('user_id', user_id)
+
+    if (orderError) {
+        console.error('Error fetching order:', orderError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    // Отправляем данные созданного заказа в ответе
+    res.status(200).json(orderData);
+});
+
+//PAYMENTS
+
+app.post('/payment/tinkoff/init', async (req, res) => {
+    // #swagger.tags = ['Payments']
+    const ordernumber  = req.body.order_number;
+
+     // Прочесть запись в таблице orders и получить данные созданного заказа
+     const { data: orderData, error: orderError } = await supabase
+     .from('orders')
+     .select()
+     .eq('number', ordernumber)
+console.log(orderData);
+ // Инициализируем платеж Тинькофф
+ const terminalKey = '1694006554663DEMO';
+ const amount = orderData[0].amount * 100; // В копейках
+const orderId = ordernumber;
+const merchantPassword = 'rns5jl8e89domk5c'; // Пароль мерчанта
+const notificationURL = 'https://api.mygym.world/webhooks/tinkoff/notifications';
+const customerKey = '12345'
+
+    const paymentInitResult = await initPayment(notificationURL, terminalKey, amount, orderId, merchantPassword, customerKey) 
+
+    // Создать новую запись в таблице orders и получить данные созданного заказа
+    const { data: orderResultData, error: orderResultError } = await supabase
+        .from('orders')
+        .update([{ status: 'PENDING' }])
+        .eq('number', ordernumber)
+        .select();
+
+    if (orderError) {
+        console.error('Error creating order:', orderError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    // Отправляем данные созданного заказа в ответе
+    res.json(paymentInitResult);
+});
+
+//WEBHOOKS
+
+app.post('/webhooks/tinkoff/notifications', async (req, res) => {
+    // #swagger.tags = ['Webhooks']
+    const ordernumber  = req.body.OrderId;
+    const status = req.body.Status;
+console.log(req.body);
+    if (status === 'CONFIRMED') {
+
+// Обновить запись в таблице orders и получить данные созданного заказа
+const { data: orderResultData, error: orderResultError } = await supabase
+    .from('orders')
+    .update([{ status: 'COMPLETE' }])
+    .eq('number', ordernumber)
+    .select();
+
+   const user_id = orderResultData[0].user_id;
+   const amount = orderResultData[0].amount;
+
+
+    // Создать новую запись в таблице transactions
+    const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert([{ user_id, amount, type: 'DEP' }]);
+
+    if (transactionError) {
+        console.error('Error creating transaction:', transactionError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+  // Проверьте, существует ли запись balance для user_id
+const { data: balanceData, error: balanceCheckError } = await supabase
+.from('balance')
+.select('user_id')
+.eq('user_id', user_id);
+
+if (balanceCheckError || !balanceData || balanceData.length === 0) {
+const { error: balanceCreateError } = await supabase
+    .from('balance')
+    .insert([{ user_id, amount }]);
+
+if (balanceCreateError) {
+    console.error('Error creating balance:', balanceCreateError);
+    res.status(500).send('Internal Server Error');
+    return;
+}
+} else {
+// Обновите запись в таблице balance для user_id, если запись уже существует
+const { error: balanceUpdateError } = await supabase
+    .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(amount) });
+
+if (balanceUpdateError) {
+    console.error('Error updating balance:', balanceUpdateError);
+    res.status(500).send('Internal Server Error');
+    return;
+}
+}
+
+
+     }
+
+    res.status(200).send('OK');
 });
 
 app.listen(port, () => {
