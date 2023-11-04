@@ -5,6 +5,7 @@ const toggleDevice = require('./toggleDevice');
 const swaggerUi = require('swagger-ui-express')
 const swaggerFile = require('./swagger_output.json')
 const initPayment = require('./src/helpers/tinkoff/init.js');
+const sendPostMessage = require('./src/helpers/sendPostMessage.js');
 const { stat } = require('fs');
 
 const app = express();
@@ -626,10 +627,10 @@ app.post('/payment/tinkoff/init', async (req, res) => {
      .eq('number', ordernumber)
 console.log(orderData);
  // Инициализируем платеж Тинькофф
- const terminalKey = '1694006554663DEMO';
+ const terminalKey = process.env.TINKOFF_TERMINAL_KEY;
  const amount = orderData[0].amount * 100; // В копейках
 const orderId = ordernumber;
-const merchantPassword = 'rns5jl8e89domk5c'; // Пароль мерчанта
+const merchantPassword = process.env.TINKOFF_PASSWORD; // Пароль мерчанта
 const notificationURL = 'https://api.mygym.world/webhooks/tinkoff/notifications';
 const customerKey = '12345'
 
@@ -671,6 +672,21 @@ const { data: orderResultData, error: orderResultError } = await supabase
    const user_id = orderResultData[0].user_id;
    const amount = orderResultData[0].amount;
 
+// Получить запись из таблицы users по user_id
+const { data: userData, error: userError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user_id);
+
+if (userError || !userData || userData.length === 0) {
+    console.error('Error fetching user:', userError || 'User not found');
+    res.status(500).send('Internal Server Error');
+    return;
+}
+
+const telegram_id = userData[0].telegram_id;
+console.log(userData);
+
 
     // Создать новую запись в таблице transactions
     const { error: transactionError } = await supabase
@@ -711,10 +727,34 @@ if (balanceUpdateError) {
 }
 }
 
+const { data: newBalanceData, error: newBalanceCheckError } = await supabase
+.from('balance')
+.select('*')
+.eq('user_id', user_id);
+const newAmount = newBalanceData[0].amount;
+console.log(newAmount);
 
-     }
+   // Замените эти значения на актуальные данные
+   const body = {
+    telegram_id: telegram_id,
+    message: 'Платеж успешно завершен. Ваш баланс пополнен на ' + amount + ' ₽. Всего на балансе ' + newAmount + ' ₽.'
+};
+const url = 'https://hook.eu2.make.com/86pyo5ltmxubmsovwxq4aiqzq6ni6tcy';
+const headers = { 'Content-Type': 'application/json' };
 
-    res.status(200).send('OK');
+// Вызов функции с использованием async/await
+(async () => {
+  try {
+    const response = await sendPostMessage(body, url, headers);
+    console.log("Data from POST response:", response);
+  } catch (error) {
+    console.error("Failed to send POST request:", error);
+  }
+})();
+
+   }
+
+   res.status(200).send('OK');
 });
 
 app.listen(port, () => {
