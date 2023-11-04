@@ -42,12 +42,4 @@ console.log(requestBody);
   }
 }
 
-// Пример использования функции
-const terminalKey = '1694006554663DEMO';
-const amount = 140000; // В копейках
-const orderId = '21053';
-const merchantPassword = 'rns5jl8e89domk5c'; // Пароль мерчанта
-const notificationURL = 'https://httpdump.app/dumps/d56b5c56-0a17-4867-b909-0e5ee8c9047a';
-const customerKey = '12345'
-
 module.exports = initPayment;

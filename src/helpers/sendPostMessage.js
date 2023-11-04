@@ -21,11 +21,6 @@ async function sendPostMessage(body, url, headers) {
 
     console.error("Error during POST request:", errorInfo);
 
-    // Вместо выбрасывания исключения можно вернуть объект ошибки
-    // Если вы хотите вместо этого выбросить исключение, вы можете раскомментировать следующую строку
-    // throw errorInfo;
-
-    // Возвращаем ошибку в том виде, в котором она нужна вам
     return errorInfo;
   }
 }
