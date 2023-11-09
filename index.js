@@ -475,6 +475,85 @@ app.post('/locations/unlock', async (req, res) => {
     }
 });
 
+//GOODS
+
+app.get('/goods', async (req, res) => {
+    // #swagger.tags = ['Goods']
+    const { data, error } = await supabase
+        .from('goods')
+        .select('*');
+
+    if (error) {
+        console.error('Error fetching goods:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.json(data);
+});
+
+app.post('/goods', async (req, res) => {
+
+    // #swagger.tags = ['Goods']
+    const { name, description, price, type } = req.body;
+
+    if (!name || !description || !price || !type) {
+        res.status(400).send('Bad Request: Missing required fields');
+        return;
+    }
+
+    const { error: insertError } = await supabase
+        .from('goods')
+        .insert([{ name, description, price, type }]);
+    if (insertError) {
+        console.error('Error creating goods:', insertError);
+        if (insertError.code === '23505') {
+            res.status(409).send('Conflict: Good with this name already exists');
+            return;
+        }
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    const { data, error: selectError } = await supabase
+        .from('goods')
+        .select('*')
+        .eq('name', name);
+    if (selectError) {
+
+        console.error('Error fetching goods:', selectError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.status(201).json(data[0]);
+});
+
+app.delete('/goods/:id', async (req, res) => {
+    // #swagger.tags = ['Goods']
+    const id = req.params.id;
+
+    const { error: deleteError } = await supabase
+        .from('goods')
+        .delete()
+        .eq('id', id);
+
+    if (deleteError) {
+        console.error('Error deleting subscription:', deleteError);
+        if (deleteError.code === '23503') {
+            console.error(deleteError.details);
+            res.status(409).send('Conflict: Subscription is still referenced in another table');
+            return;
+        }
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+    
+
+    res.status(204).send();
+});
+
+
 //SUBSCRIPTIONS
 
 app.get('/subscriptions', async (req, res) => {
@@ -491,6 +570,71 @@ app.get('/subscriptions', async (req, res) => {
 
     res.json(data);
 });
+
+app.post('/subscriptions', async (req, res) => {
+
+    // #swagger.tags = ['Subscriptions']
+    const { name, code, price, duration } = req.body;
+
+    if (!name || !code || !price || !duration) {
+        res.status(400).send('Bad Request: Missing required fields');
+        return;
+    }
+
+    const { error: insertError } = await supabase
+        .from('subscriptions')
+        .insert([{ name, code, price, duration }]);
+    if (insertError) {
+        console.error('Error creating subscription:', insertError);
+        if (insertError.code === '23505') {
+            res.status(409).send('Conflict: Subscription with this name already exists');
+            return;
+        }
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    const { data, error: selectError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('name', name);
+    if (selectError) {
+
+        console.error('Error fetching subscription:', selectError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.status(201).json(data[0]);
+});
+
+app.delete('/subscriptions/:id', async (req, res) => {
+    // #swagger.tags = ['Subscriptions']
+    const id = req.params.id;
+
+    const { error: deleteError } = await supabase
+        .from('subscriptions')
+        .delete()
+        .eq('id', id);
+
+    if (deleteError) {
+        console.error('Error deleting subscription:', deleteError);
+        if (deleteError.code === '23503') {
+            console.error(deleteError.details);
+            res.status(409).send('Conflict: Subscription is still referenced in another table');
+            return;
+        }
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+    
+
+    res.status(204).send();
+});
+
+
+
+
 
 
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
