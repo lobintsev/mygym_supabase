@@ -529,6 +529,39 @@ app.post('/goods', async (req, res) => {
     res.status(201).json(data[0]);
 });
 
+
+app.patch('/goods/:id', async (req, res) => {
+
+    // #swagger.tags = ['Goods']
+    const { name, description, price, type } = req.body;
+    const id = req.params.id;
+
+    const { error: updateError } = await supabase
+        .from('goods')
+        .update({  name, description, price, type })
+        .eq('id', id);
+
+    if (updateError) {
+        console.error('Error updating Goods:', updateError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+
+    const { data, error: selectError } = await supabase
+        .from('goods')
+        .select('*')
+        .eq('id', id);
+    if (selectError) {
+
+        console.error('Error fetching Goods:', selectError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.status(201).json(data[0]);
+});
+
 app.delete('/goods/:id', async (req, res) => {
     // #swagger.tags = ['Goods']
     const id = req.params.id;
@@ -598,6 +631,38 @@ app.post('/subscriptions', async (req, res) => {
         .from('subscriptions')
         .select('*')
         .eq('name', name);
+    if (selectError) {
+
+        console.error('Error fetching subscription:', selectError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.status(201).json(data[0]);
+});
+
+app.patch('/subscriptions/:id', async (req, res) => {
+
+    // #swagger.tags = ['Subscriptions']
+    const { name, code, price, duration } = req.body;
+    const id = req.params.id;
+
+    const { error: updateError } = await supabase
+        .from('subscriptions')
+        .update({ name, code, price, duration })
+        .eq('id', id);
+
+    if (updateError) {
+        console.error('Error updating subscription:', updateError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+
+    const { data, error: selectError } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('id', id);
     if (selectError) {
 
         console.error('Error fetching subscription:', selectError);
