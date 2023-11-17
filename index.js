@@ -2,6 +2,8 @@ const express = require('express');
 require('dotenv').config();
 const { createClient } = require('@supabase/supabase-js');
 const toggleDevice = require('./toggleDevice');
+const listDevices = require('./src/helpers/alice/listDevices');
+const deviceInfo = require('./src/helpers/alice/deviceInfo');
 const swaggerUi = require('swagger-ui-express')
 const swaggerFile = require('./swagger_output.json')
 const initPayment = require('./src/helpers/tinkoff/init.js');
@@ -16,6 +18,50 @@ app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+//ALICE
+
+app.get('/alice/info', async (req, res) => {
+    // #swagger.tags = ['Alice']
+    const { data, error } = await listDevices();
+    if (error) {
+        console.error('Error fetching devices:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+
+    res.json(data);
+});
+
+app.get('/alice/devices/:deviceId', async (req, res) => {
+    // #swagger.tags = ['Alice']
+    deviceId = req.params.deviceId;
+    const { data, error } = await deviceInfo(deviceId);
+    if (error) {
+        console.error('Error fetching devices:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+
+    res.json(data);
+});
+
+
+app.post('/locations/devices/onoff/:deviceId', async (req, res) => {
+    // #swagger.tags = ['Alice']
+    deviceId = req.params.deviceId;
+    try {
+        await toggleDevice(deviceId, true);  // Запускаем функцию toggleDevice с loc_id
+        res.status(200).send('Устройство успешно переключено');
+    } catch (error) {
+        console.error('Ошибка при переключении устройства:', error);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+
 
 //USERS
 
