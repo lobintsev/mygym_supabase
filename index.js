@@ -481,7 +481,8 @@ app.get('/goods', async (req, res) => {
     // #swagger.tags = ['Goods']
     const { data, error } = await supabase
         .from('goods')
-        .select('*');
+        .select('*')
+        .eq('deleted', 'false')
 
     if (error) {
         console.error('Error fetching goods:', error);
@@ -533,12 +534,12 @@ app.post('/goods', async (req, res) => {
 app.patch('/goods/:id', async (req, res) => {
 
     // #swagger.tags = ['Goods']
-    const { name, description, price, type } = req.body;
+    const { name, description, price, type, deleted } = req.body;
     const id = req.params.id;
 
     const { error: updateError } = await supabase
         .from('goods')
-        .update({  name, description, price, type })
+        .update({  name, description, price, type, deleted })
         .eq('id', id);
 
     if (updateError) {
@@ -593,7 +594,8 @@ app.get('/subscriptions', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
     const { data, error } = await supabase
         .from('subscriptions')
-        .select('*');
+        .select('*')
+        .eq('deleted', 'false')
 
     if (error) {
         console.error('Error fetching locations:', error);
@@ -644,12 +646,12 @@ app.post('/subscriptions', async (req, res) => {
 app.patch('/subscriptions/:id', async (req, res) => {
 
     // #swagger.tags = ['Subscriptions']
-    const { name, code, price, duration } = req.body;
+    const { name, code, price, duration, deleted } = req.body;
     const id = req.params.id;
 
     const { error: updateError } = await supabase
         .from('subscriptions')
-        .update({ name, code, price, duration })
+        .update({ name, code, price, duration, deleted })
         .eq('id', id);
 
     if (updateError) {
