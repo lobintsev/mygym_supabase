@@ -49,7 +49,7 @@ app.get('/alice/devices/:deviceId', async (req, res) => {
 });
 
 
-app.post('/locations/devices/onoff/:deviceId', async (req, res) => {
+app.post('/alice/devices/onoff/:deviceId', async (req, res) => {
     // #swagger.tags = ['Alice']
     deviceId = req.params.deviceId;
     try {
