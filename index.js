@@ -9,6 +9,7 @@ const swaggerFile = require('./swagger_output.json')
 const initPayment = require('./src/helpers/tinkoff/init.js');
 const sendPostMessage = require('./src/helpers/sendPostMessage.js');
 const { stat } = require('fs');
+const { time, timeStamp } = require('console');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -752,17 +753,18 @@ app.delete('/subscriptions/:id', async (req, res) => {
 
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
-    const { telegram_id, subscription_id } = req.body; 
+    const { telegram_id, subscription_id, timestamp } = req.body; 
 
     if (!telegram_id || !subscription_id) {
         return res.status(400).send('telegram_id and subscription_id are required');
     }
 
-    async function buySubscription(telegramId, subscriptionId) {
+    async function buySubscription(telegramId, subscriptionId, timestamp) {
         try {
-            const { data, error } = await supabase.rpc('buy_subscription_balance', {
+            const { data, error } = await supabase.rpc('buy_subscription_balance_startdate', {
                 p_telegram_id: telegramId,
-                p_subscription_id: subscriptionId
+                p_subscription_id: subscriptionId,
+                p_startdate: timestamp || new Date().getTime()
             });
     
             if (error) {
