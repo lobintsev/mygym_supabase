@@ -763,10 +763,10 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
         try {
             const timestampValue = timestamp ? new Date(timestamp).toISOString() : new Date().toISOString();
             const { data, error } = await supabase.rpc('buy_subscription_balance_startdate', {
-                
+                p_start_date: timestampValue,
                 p_telegram_id: telegramId,
                 p_subscription_id: subscriptionId,
-                p_startdate: timestampValue
+                
             });
     
             if (error) {
