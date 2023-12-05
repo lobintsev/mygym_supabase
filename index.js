@@ -406,7 +406,7 @@ app.get('/users/subscriptions/:telegram_id', async (req, res) => {
       )
     `)
     .eq('user_id', user_id) 
-    .order('finish')
+    .order('finish', { ascending: false })
     .gte('finish', new Date().toISOString()); 
   
     if (actionsQueryResult.error) {
