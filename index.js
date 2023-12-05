@@ -781,7 +781,7 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
         }
     }
 
-    buySubscription(telegram_id, subscription_id).then(response => {
+    buySubscription(telegram_id, subscription_id, timestamp).then(response => {
         console.log('Response:', response);
         
         // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
