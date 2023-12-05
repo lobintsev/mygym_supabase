@@ -83,7 +83,7 @@ app.get('/users', async (req, res) => {
 app.post('/users', async (req, res) => {
     // #swagger.tags = ['Users']
     const { telegram_id, first_name, last_name, telegram_nickname, phone } = req.body;  
-
+const role = [ 'CUSTOMER'];
     if (!telegram_id || !first_name ) {
         res.status(400).send('Bad Request: Missing required fields');
         return;
@@ -91,7 +91,7 @@ app.post('/users', async (req, res) => {
 
     const { error: insertError } = await supabase
         .from('users')
-        .insert([{ telegram_id, first_name, last_name, telegram_nickname, phone }]);  
+        .insert([{ telegram_id, first_name, last_name, telegram_nickname, phone, role }]);  
     if (insertError) {
         console.error('Error creating user:', insertError);
         if (insertError.code === '23505') {
