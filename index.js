@@ -84,7 +84,7 @@ app.post('/users', async (req, res) => {
     // #swagger.tags = ['Users']
     const { telegram_id, first_name, last_name, telegram_nickname, phone } = req.body;  
 
-    if (!telegram_id || !first_name || !last_name ) {
+    if (!telegram_id || !first_name ) {
         res.status(400).send('Bad Request: Missing required fields');
         return;
     }
