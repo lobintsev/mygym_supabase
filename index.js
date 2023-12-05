@@ -381,7 +381,6 @@ app.get('/users/subscriptions/:telegram_id', async (req, res) => {
     const userQueryResult = await supabase
         .from('users')
         .select('id')
-        .order('finish.desc')
         .eq('telegram_id', telegram_id);
   
     if (userQueryResult.error) {
@@ -406,7 +405,8 @@ app.get('/users/subscriptions/:telegram_id', async (req, res) => {
         *
       )
     `)
-    .eq('user_id', user_id)
+    .eq('user_id', user_id) 
+    .order('finish.desc')
     .gte('finish', new Date().toISOString()); 
   
     if (actionsQueryResult.error) {
