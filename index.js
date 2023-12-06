@@ -545,7 +545,8 @@ app.get('/users/subscriptions/current/:telegram_id', async (req, res) => {
     `)
     .eq('user_id', user_id)
     .gte('finish', new Date().toISOString())
-    .maybeSingle()
+    .limit(1)
+    .single()
 
     const hasSubscriptions = actionsQueryResult.data.length > 0;
     res.json(hasSubscriptions);
