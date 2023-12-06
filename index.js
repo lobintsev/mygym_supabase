@@ -545,19 +545,17 @@ app.get('/users/subscriptions/current/:telegram_id', async (req, res) => {
     `)
     .eq('user_id', user_id)
     .gte('finish', new Date().toISOString())
-    
-
-    const hasSubscriptions = actionsQueryResult.data.length > 0;
-    res.json(hasSubscriptions);
-
+    .order('finish', {ascending: false})
+    .limit(1)
+  .single()
   
     if (actionsQueryResult.error) {
-        console.error('Error fetching balance:', actionsQueryResult.error);
+        console.error('Error fetching subscription:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
   
-    res.json(hasSubscriptions);
+    res.json(actionsQueryResult.data);
 });
 //LOCATIONS
 
