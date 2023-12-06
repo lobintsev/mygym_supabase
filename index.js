@@ -410,7 +410,7 @@ app.get('/users/subscriptions/:telegram_id', async (req, res) => {
     .gte('finish', new Date().toISOString()); 
   
     if (actionsQueryResult.error) {
-        console.error('Error fetching balance:', actionsQueryResult.error);
+        console.error('Error fetching subscription:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
