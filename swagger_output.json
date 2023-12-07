@@ -802,9 +802,6 @@
                 },
                 "subscription_id": {
                   "example": "any"
-                },
-                "timestamp": {
-                  "example": "any"
                 }
               }
             }

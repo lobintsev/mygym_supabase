@@ -845,15 +845,52 @@ app.delete('/subscriptions/:id', async (req, res) => {
 
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
-    const { telegram_id, subscription_id, timestamp } = req.body; 
+    const { telegram_id, subscription_id } = req.body; 
 
     if (!telegram_id || !subscription_id) {
         return res.status(400).send('telegram_id and subscription_id are required');
     }
 
-    async function buySubscription(telegramId, subscriptionId, timestamp) {
+    const userData = await supabase
+    .from('users')
+    .select('*')
+    .eq('telegram_id', telegram_id)
+    .single()
+
+if (userData.error) {
+    console.error('Error fetching user:', error);
+    res.status(500).send('Internal Server Error');
+    return;
+}
+
+const user_id = userData.data.id
+
+    const actionsQueryResult = await supabase
+    .from('user_subscriptions')
+    .select(`
+      *, 
+      subscriptions (
+        *
+      )
+    `)
+    .eq('user_id', user_id)
+    .gte('finish', new Date().toISOString())
+    .order('finish', {ascending: false})
+    .limit(1)
+  .single()
+  
+    if (actionsQueryResult.error) {
+        console.error('Error fetching subscription:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+   const timestampValue = actionsQueryResult.data.finish
+   console.log(timestampValue)
+
+    async function buySubscription(telegramId, subscriptionId) {
         try {
-            const timestampValue = timestamp ? timestamp : new Date().toISOString();
+            
             const { data, error } = await supabase.rpc('buy_subscription_balance_startdate', {
                 p_start_date: timestampValue,
                 p_telegram_id: telegramId,
@@ -873,7 +910,7 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
         }
     }
 
-    buySubscription(telegram_id, subscription_id, timestamp).then(response => {
+    buySubscription(telegram_id, subscription_id).then(response => {
         console.log('Response:', response);
         
         // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
