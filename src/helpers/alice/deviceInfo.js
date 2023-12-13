@@ -4,7 +4,7 @@ dotenv.config();
 
 function deviceInfo(deviceId) {
   const url = 'https://api.iot.yandex.net/v1.0/devices/' + deviceId;
-  const token = process.env.ALICE_IOT_TOKEN; // Загрузка токена из .env файла
+  const token = process.env.ALICE_IOT_TOKEN; // Загрузка токена из .env файла и добвление в заголовок запроса
 
 
   return axios.get(url, {

@@ -8,8 +8,7 @@ const swaggerUi = require('swagger-ui-express')
 const swaggerFile = require('./swagger_output.json')
 const initPayment = require('./src/helpers/tinkoff/init.js');
 const sendPostMessage = require('./src/helpers/sendPostMessage.js');
-const { stat } = require('fs');
-const { time, timeStamp } = require('console');
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -539,7 +538,7 @@ app.get('/users/subscriptions/current/:telegram_id', async (req, res) => {
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
 
     if (!userQueryResult.data || userQueryResult.data.length === 0) {
         res.status(404).send('User Not Found');
