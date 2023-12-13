@@ -83,16 +83,16 @@ app.get('/users', async (req, res) => {
 
 app.post('/users', async (req, res) => {
     // #swagger.tags = ['Users']
-    const { telegram_id, first_name, last_name, telegram_nickname, phone } = req.body;  
-const role = [ 'CUSTOMER'];
-    if (!telegram_id || !first_name ) {
+    const { telegram_id, first_name, last_name, telegram_nickname, phone } = req.body;
+    const role = ['CUSTOMER'];
+    if (!telegram_id || !first_name) {
         res.status(400).send('Bad Request: Missing required fields');
         return;
     }
 
     const { error: insertError } = await supabase
         .from('users')
-        .insert([{ telegram_id, first_name, last_name, telegram_nickname, phone, role }]);  
+        .insert([{ telegram_id, first_name, last_name, telegram_nickname, phone, role }]);
     if (insertError) {
         console.error('Error creating user:', insertError);
         if (insertError.code === '23505') {
@@ -106,17 +106,31 @@ const role = [ 'CUSTOMER'];
     const { data, error: selectError } = await supabase
         .from('users')
         .select('*')
-        .eq('telegram_id', telegram_id); 
+        .eq('telegram_id', telegram_id);
     if (selectError) {
         console.error('Error fetching user:', selectError);
         res.status(500).send('Internal Server Error');
         return;
     }
 
-    res.status(201).json(data[0]);  
+    res.status(201).json(data[0]);
 });
 
+app.delete('/users/:id', async (req, res) => {
+    // #swagger.tags = ['Users']
 
+    const user_id = req.params.id;
+    const { data, error } = await supabase.rpc('delete_user_and_relations', {
+        user_id: user_id,
+    });
+
+    if (error) {
+        console.error('Ошибка:', error);
+        return null;
+    }
+
+    res.json(data);
+});
 
 app.get('/users/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
@@ -134,7 +148,7 @@ app.get('/users/:telegram_id', async (req, res) => {
     }
 
     if (data && data.length > 0) {
-        res.json(data[0]); 
+        res.json(data[0]);
     } else {
         res.status(404).send('User Not Found');
     }
@@ -194,38 +208,38 @@ app.get('/users/actions', async (req, res) => {
 app.get('/users/actions/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
-  
+
 
     const userQueryResult = await supabase
         .from('users')
         .select('id')
         .eq('telegram_id', telegram_id);
-  
+
     if (userQueryResult.error) {
         console.error('Error fetching user:', userQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
     if (!userQueryResult.data || userQueryResult.data.length === 0) {
         res.status(404).send('User Not Found');
         return;
     }
-  
+
     const user_id = userQueryResult.data[0].id;
-  
+
 
     const actionsQueryResult = await supabase
         .from('actions')
         .select('id, action')
         .eq('user_id', user_id);
-  
+
     if (actionsQueryResult.error) {
         console.error('Error fetching actions:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
     res.json(actionsQueryResult.data);
 });
 
@@ -238,33 +252,33 @@ app.get('/users/balance/:telegram_id', async (req, res) => {
         .from('users')
         .select('id')
         .eq('telegram_id', telegram_id);
-  
+
     if (userQueryResult.error) {
         console.error('Error fetching user:', userQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
-   
+
+
     if (!userQueryResult.data || userQueryResult.data.length === 0) {
         res.status(404).send('User Not Found');
         return;
     }
-  
+
     const user_id = userQueryResult.data[0].id;
-  
- 
+
+
     const actionsQueryResult = await supabase
         .from('balance')
         .select('*')
         .eq('user_id', user_id);
-  
+
     if (actionsQueryResult.error) {
         console.error('Error fetching balance:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
     res.json(actionsQueryResult.data[0]);
 });
 
@@ -304,164 +318,164 @@ app.post('/users/balance/:telegram_id/deposit', async (req, res) => {
         return;
     }
 
-  // Проверьте, существует ли запись balance для user_id
-const { data: balanceData, error: balanceCheckError } = await supabase
-.from('balance')
-.select('user_id')
-.eq('user_id', user_id);
+    // Проверьте, существует ли запись balance для user_id
+    const { data: balanceData, error: balanceCheckError } = await supabase
+        .from('balance')
+        .select('user_id')
+        .eq('user_id', user_id);
 
-if (balanceCheckError || !balanceData || balanceData.length === 0) {
-const { error: balanceCreateError } = await supabase
-    .from('balance')
-    .insert([{ user_id, amount }]);
+    if (balanceCheckError || !balanceData || balanceData.length === 0) {
+        const { error: balanceCreateError } = await supabase
+            .from('balance')
+            .insert([{ user_id, amount }]);
 
-if (balanceCreateError) {
-    console.error('Error creating balance:', balanceCreateError);
-    res.status(500).send('Internal Server Error');
-    return;
-}
-} else {
-// Обновите запись в таблице balance для user_id, если запись уже существует
-const { error: balanceUpdateError } = await supabase
-    .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(amount) });
+        if (balanceCreateError) {
+            console.error('Error creating balance:', balanceCreateError);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+    } else {
+        // Обновите запись в таблице balance для user_id, если запись уже существует
+        const { error: balanceUpdateError } = await supabase
+            .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(amount) });
 
-if (balanceUpdateError) {
-    console.error('Error updating balance:', balanceUpdateError);
-    res.status(500).send('Internal Server Error');
-    return;
-}
-}
+        if (balanceUpdateError) {
+            console.error('Error updating balance:', balanceUpdateError);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+    }
 
-res.status(201).send('Deposit successful');
+    res.status(201).send('Deposit successful');
 });
 
 app.get('/users/transactions/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
-  
- 
+
+
     const userQueryResult = await supabase
         .from('users')
         .select('id')
         .eq('telegram_id', telegram_id);
-  
+
     if (userQueryResult.error) {
         console.error('Error fetching user:', userQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
 
     if (!userQueryResult.data || userQueryResult.data.length === 0) {
         res.status(404).send('User Not Found');
         return;
     }
-  
+
     const user_id = userQueryResult.data[0].id;
 
     const actionsQueryResult = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user_id);
-  
+
     if (actionsQueryResult.error) {
         console.error('Error fetching balance:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
     res.json(actionsQueryResult.data);
 });
 
 app.get('/users/subscriptions/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
-  
- 
+
+
     const userQueryResult = await supabase
         .from('users')
         .select('id')
         .eq('telegram_id', telegram_id);
-  
+
     if (userQueryResult.error) {
         console.error('Error fetching user:', userQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
 
     if (!userQueryResult.data || userQueryResult.data.length === 0) {
         res.status(404).send('User Not Found');
         return;
     }
-  
+
     const user_id = userQueryResult.data[0].id;
 
     const actionsQueryResult = await supabase
-    .from('user_subscriptions')
-    .select(`
+        .from('user_subscriptions')
+        .select(`
       *, 
       subscriptions (
         *
       )
     `)
-    .eq('user_id', user_id)
-    .gte('finish', new Date().toISOString()); 
-  
+        .eq('user_id', user_id)
+        .gte('finish', new Date().toISOString());
+
     if (actionsQueryResult.error) {
         console.error('Error fetching balance:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
     res.json(actionsQueryResult.data);
 });
 
 app.get('/users/subscriptions/status/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
-  
- 
+
+
     const userQueryResult = await supabase
         .from('users')
         .select('id')
         .eq('telegram_id', telegram_id);
-  
+
     if (userQueryResult.error) {
         console.error('Error fetching user:', userQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
 
     if (!userQueryResult.data || userQueryResult.data.length === 0) {
         res.status(404).send('User Not Found');
         return;
     }
-  
+
     const user_id = userQueryResult.data[0].id;
 
     const actionsQueryResult = await supabase
-    .from('user_subscriptions')
-    .select(`
+        .from('user_subscriptions')
+        .select(`
       *, 
       subscriptions (
         *
       )
     `)
-    .eq('user_id', user_id)
-    .gte('finish', new Date().toISOString()); 
+        .eq('user_id', user_id)
+        .gte('finish', new Date().toISOString());
 
     const hasSubscriptions = actionsQueryResult.data.length > 0;
     res.json(hasSubscriptions);
 
-  
+
     if (actionsQueryResult.error) {
         console.error('Error fetching balance:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
-  
+
     res.json(hasSubscriptions);
 });
 
@@ -586,7 +600,7 @@ app.patch('/goods/:id', async (req, res) => {
 
     const { error: updateError } = await supabase
         .from('goods')
-        .update({  name, description, price, type, deleted })
+        .update({ name, description, price, type, deleted })
         .eq('id', id);
 
     if (updateError) {
@@ -629,7 +643,7 @@ app.delete('/goods/:id', async (req, res) => {
         res.status(500).send('Internal Server Error');
         return;
     }
-    
+
 
     res.status(204).send();
 });
@@ -741,7 +755,7 @@ app.delete('/subscriptions/:id', async (req, res) => {
         res.status(500).send('Internal Server Error');
         return;
     }
-    
+
 
     res.status(204).send();
 });
@@ -753,7 +767,7 @@ app.delete('/subscriptions/:id', async (req, res) => {
 
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
-    const { telegram_id, subscription_id, timestamp } = req.body; 
+    const { telegram_id, subscription_id, timestamp } = req.body;
 
     if (!telegram_id || !subscription_id) {
         return res.status(400).send('telegram_id and subscription_id are required');
@@ -766,14 +780,14 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
                 p_start_date: timestampValue,
                 p_telegram_id: telegramId,
                 p_subscription_id: subscriptionId,
-                
+
             });
-    
+
             if (error) {
                 console.error('Ошибка:', error);
                 return null;
             }
-    
+
             return data;
         } catch (err) {
             console.error('Произошла ошибка при вызове функции:', err);
@@ -783,12 +797,12 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
 
     buySubscription(telegram_id, subscription_id, timestamp).then(response => {
         console.log('Response:', response);
-        
+
         // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
         if (response === null) {
             return res.status(500).send('Internal server error');
         }
-        
+
         // Отправляем ответ обратно клиенту
         res.json(response);
     });
@@ -843,7 +857,7 @@ app.get('/orders/:telegram_id', async (req, res) => {
     const telegram_id = req.params.telegram_id;
 
 
-  
+
 
     // Получить user_id из таблицы users
     const { data: userData, error: userError } = await supabase
@@ -879,23 +893,23 @@ app.get('/orders/:telegram_id', async (req, res) => {
 
 app.post('/payment/tinkoff/init', async (req, res) => {
     // #swagger.tags = ['Payments']
-    const ordernumber  = req.body.order_number;
+    const ordernumber = req.body.order_number;
 
-     // Прочесть запись в таблице orders и получить данные созданного заказа
-     const { data: orderData, error: orderError } = await supabase
-     .from('orders')
-     .select()
-     .eq('number', ordernumber)
-console.log(orderData);
- // Инициализируем платеж Тинькофф
- const terminalKey = process.env.TINKOFF_TERMINAL_KEY;
- const amount = orderData[0].amount * 100; // В копейках
-const orderId = ordernumber;
-const merchantPassword = process.env.TINKOFF_PASSWORD; // Пароль мерчанта
-const notificationURL = 'https://api.mygym.world/webhooks/tinkoff/notifications';
-const customerKey = '12345'
+    // Прочесть запись в таблице orders и получить данные созданного заказа
+    const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select()
+        .eq('number', ordernumber)
+    console.log(orderData);
+    // Инициализируем платеж Тинькофф
+    const terminalKey = process.env.TINKOFF_TERMINAL_KEY;
+    const amount = orderData[0].amount * 100; // В копейках
+    const orderId = ordernumber;
+    const merchantPassword = process.env.TINKOFF_PASSWORD; // Пароль мерчанта
+    const notificationURL = 'https://api.mygym.world/webhooks/tinkoff/notifications';
+    const customerKey = '12345'
 
-    const paymentInitResult = await initPayment(notificationURL, terminalKey, amount, orderId, merchantPassword, customerKey) 
+    const paymentInitResult = await initPayment(notificationURL, terminalKey, amount, orderId, merchantPassword, customerKey)
 
     // Создать новую запись в таблице orders и получить данные созданного заказа
     const { data: orderResultData, error: orderResultError } = await supabase
@@ -918,104 +932,104 @@ const customerKey = '12345'
 
 app.post('/webhooks/tinkoff/notifications', async (req, res) => {
     // #swagger.tags = ['Webhooks']
-    const ordernumber  = req.body.OrderId;
+    const ordernumber = req.body.OrderId;
     const status = req.body.Status;
-console.log(req.body);
+    console.log(req.body);
     if (status === 'CONFIRMED') {
 
-// Обновить запись в таблице orders и получить данные созданного заказа
-const { data: orderResultData, error: orderResultError } = await supabase
-    .from('orders')
-    .update([{ status: 'COMPLETE' }])
-    .eq('number', ordernumber)
-    .select();
+        // Обновить запись в таблице orders и получить данные созданного заказа
+        const { data: orderResultData, error: orderResultError } = await supabase
+            .from('orders')
+            .update([{ status: 'COMPLETE' }])
+            .eq('number', ordernumber)
+            .select();
 
-   const user_id = orderResultData[0].user_id;
-   const amount = orderResultData[0].amount;
+        const user_id = orderResultData[0].user_id;
+        const amount = orderResultData[0].amount;
 
-// Получить запись из таблицы users по user_id
-const { data: userData, error: userError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user_id);
+        // Получить запись из таблицы users по user_id
+        const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user_id);
 
-if (userError || !userData || userData.length === 0) {
-    console.error('Error fetching user:', userError || 'User not found');
-    res.status(500).send('Internal Server Error');
-    return;
-}
+        if (userError || !userData || userData.length === 0) {
+            console.error('Error fetching user:', userError || 'User not found');
+            res.status(500).send('Internal Server Error');
+            return;
+        }
 
-const telegram_id = userData[0].telegram_id;
-console.log(userData);
+        const telegram_id = userData[0].telegram_id;
+        console.log(userData);
 
 
-    // Создать новую запись в таблице transactions
-    const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert([{ user_id, amount, type: 'DEP' }]);
+        // Создать новую запись в таблице transactions
+        const { error: transactionError } = await supabase
+            .from('transactions')
+            .insert([{ user_id, amount, type: 'DEP' }]);
 
-    if (transactionError) {
-        console.error('Error creating transaction:', transactionError);
-        res.status(500).send('Internal Server Error');
-        return;
+        if (transactionError) {
+            console.error('Error creating transaction:', transactionError);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+
+        // Проверьте, существует ли запись balance для user_id
+        const { data: balanceData, error: balanceCheckError } = await supabase
+            .from('balance')
+            .select('user_id')
+            .eq('user_id', user_id);
+
+        if (balanceCheckError || !balanceData || balanceData.length === 0) {
+            const { error: balanceCreateError } = await supabase
+                .from('balance')
+                .insert([{ user_id, amount }]);
+
+            if (balanceCreateError) {
+                console.error('Error creating balance:', balanceCreateError);
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+        } else {
+            // Обновите запись в таблице balance для user_id, если запись уже существует
+            const { error: balanceUpdateError } = await supabase
+                .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(amount) });
+
+            if (balanceUpdateError) {
+                console.error('Error updating balance:', balanceUpdateError);
+                res.status(500).send('Internal Server Error');
+                return;
+            }
+        }
+
+        const { data: newBalanceData, error: newBalanceCheckError } = await supabase
+            .from('balance')
+            .select('*')
+            .eq('user_id', user_id);
+        const newAmount = newBalanceData[0].amount;
+        console.log(newAmount);
+
+        // Замените эти значения на актуальные данные
+        const body = {
+            telegram_id: telegram_id,
+            message: 'Платеж успешно завершен. Ваш баланс пополнен на ' + amount + ' ₽. Всего на балансе ' + newAmount + ' ₽.'
+        };
+        const url = 'https://hook.eu2.make.com/86pyo5ltmxubmsovwxq4aiqzq6ni6tcy';
+        const headers = { 'Content-Type': 'application/json' };
+
+        // Вызов функции с использованием async/await
+        (async () => {
+            try {
+                const response = await sendPostMessage(body, url, headers);
+                console.log("Data from POST response:", response);
+            } catch (error) {
+                console.error("Failed to send POST request:", error);
+            }
+        })();
+
     }
 
-  // Проверьте, существует ли запись balance для user_id
-const { data: balanceData, error: balanceCheckError } = await supabase
-.from('balance')
-.select('user_id')
-.eq('user_id', user_id);
-
-if (balanceCheckError || !balanceData || balanceData.length === 0) {
-const { error: balanceCreateError } = await supabase
-    .from('balance')
-    .insert([{ user_id, amount }]);
-
-if (balanceCreateError) {
-    console.error('Error creating balance:', balanceCreateError);
-    res.status(500).send('Internal Server Error');
-    return;
-}
-} else {
-// Обновите запись в таблице balance для user_id, если запись уже существует
-const { error: balanceUpdateError } = await supabase
-    .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(amount) });
-
-if (balanceUpdateError) {
-    console.error('Error updating balance:', balanceUpdateError);
-    res.status(500).send('Internal Server Error');
-    return;
-}
-}
-
-const { data: newBalanceData, error: newBalanceCheckError } = await supabase
-.from('balance')
-.select('*')
-.eq('user_id', user_id);
-const newAmount = newBalanceData[0].amount;
-console.log(newAmount);
-
-   // Замените эти значения на актуальные данные
-   const body = {
-    telegram_id: telegram_id,
-    message: 'Платеж успешно завершен. Ваш баланс пополнен на ' + amount + ' ₽. Всего на балансе ' + newAmount + ' ₽.'
-};
-const url = 'https://hook.eu2.make.com/86pyo5ltmxubmsovwxq4aiqzq6ni6tcy';
-const headers = { 'Content-Type': 'application/json' };
-
-// Вызов функции с использованием async/await
-(async () => {
-  try {
-    const response = await sendPostMessage(body, url, headers);
-    console.log("Data from POST response:", response);
-  } catch (error) {
-    console.error("Failed to send POST request:", error);
-  }
-})();
-
-   }
-
-   res.status(200).send('OK');
+    res.status(200).send('OK');
 });
 
 app.listen(port, () => {
