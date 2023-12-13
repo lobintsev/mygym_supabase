@@ -419,11 +419,11 @@ app.get('/users/subscriptions/:telegram_id', async (req, res) => {
         *
       )
     `)
-        .eq('user_id', user_id)
-        .gte('finish', new Date().toISOString());
-
+    .eq('user_id', user_id)
+    .gte('finish', new Date().toISOString()); 
+  
     if (actionsQueryResult.error) {
-        console.error('Error fetching balance:', actionsQueryResult.error);
+        console.error('Error fetching subscription:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
@@ -479,6 +479,97 @@ app.get('/users/subscriptions/status/:telegram_id', async (req, res) => {
     res.json(hasSubscriptions);
 });
 
+app.get('/users/subscriptions/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
+    const telegram_id = req.params.telegram_id;
+  
+ 
+    const userQueryResult = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id);
+  
+    if (userQueryResult.error) {
+        console.error('Error fetching user:', userQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+  
+
+    if (!userQueryResult.data || userQueryResult.data.length === 0) {
+        res.status(404).send('User Not Found');
+        return;
+    }
+  
+    const user_id = userQueryResult.data[0].id;
+
+    const actionsQueryResult = await supabase
+    .from('user_subscriptions')
+    .select(`
+      *, 
+      subscriptions (
+        *
+      )
+    `)
+    .eq('user_id', user_id) 
+    .order('finish', { ascending: true })
+    .gte('finish', new Date().toISOString()); 
+  
+    if (actionsQueryResult.error) {
+        console.error('Error fetching subscription:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+  
+    res.json(actionsQueryResult.data);
+});
+
+app.get('/users/subscriptions/current/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
+    const telegram_id = req.params.telegram_id;
+  
+ 
+    const userQueryResult = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id);
+  
+    if (userQueryResult.error) {
+        console.error('Error fetching user:', userQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+  
+
+    if (!userQueryResult.data || userQueryResult.data.length === 0) {
+        res.status(404).send('User Not Found');
+        return;
+    }
+  
+    const user_id = userQueryResult.data[0].id;
+
+    const actionsQueryResult = await supabase
+    .from('user_subscriptions')
+    .select(`
+      *, 
+      subscriptions (
+        *
+      )
+    `)
+    .eq('user_id', user_id)
+    .gte('finish', new Date().toISOString())
+    .order('finish', {ascending: false})
+    .limit(1)
+  .single()
+  
+    if (actionsQueryResult.error) {
+        console.error('Error fetching subscription:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+  
+    res.json(actionsQueryResult.data);
+});
 //LOCATIONS
 
 app.get('/locations', async (req, res) => {
@@ -767,15 +858,52 @@ app.delete('/subscriptions/:id', async (req, res) => {
 
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
-    const { telegram_id, subscription_id, timestamp } = req.body;
+    const { telegram_id, subscription_id, timestamp } = req.body; 
 
     if (!telegram_id || !subscription_id) {
         return res.status(400).send('telegram_id and subscription_id are required');
     }
 
-    async function buySubscription(telegramId, subscriptionId, timestamp) {
+    const userData = await supabase
+    .from('users')
+    .select('*')
+    .eq('telegram_id', telegram_id)
+    .single()
+
+if (userData.error) {
+    console.error('Error fetching user:', error);
+    res.status(500).send('Internal Server Error');
+    return;
+}
+
+const user_id = userData.data.id
+
+    const actionsQueryResult = await supabase
+    .from('user_subscriptions')
+    .select(`
+      *, 
+      subscriptions (
+        *
+      )
+    `)
+    .eq('user_id', user_id)
+    .gte('finish', new Date().toISOString())
+    .order('finish', {ascending: false})
+    .limit(1)
+  .single()
+  
+    if (actionsQueryResult.error) {
+        console.error('Error fetching subscription:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+   const timestampValue = actionsQueryResult.data.finish
+   console.log(timestampValue)
+
+    async function buySubscription(telegramId, subscriptionId) {
         try {
-            const timestampValue = timestamp ? new Date(timestamp).toISOString() : new Date().toISOString();
+            
             const { data, error } = await supabase.rpc('buy_subscription_balance_startdate', {
                 p_start_date: timestampValue,
                 p_telegram_id: telegramId,
@@ -795,7 +923,7 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
         }
     }
 
-    buySubscription(telegram_id, subscription_id, timestamp).then(response => {
+    buySubscription(telegram_id, subscription_id).then(response => {
         console.log('Response:', response);
 
         // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
