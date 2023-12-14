@@ -386,6 +386,46 @@ app.get('/users/transactions/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult.data);
 });
 
+app.get('/users/purchases/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
+    const telegram_id = req.params.telegram_id;
+
+
+    const userQueryResult = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id);
+
+    if (userQueryResult.error) {
+        console.error('Error fetching user:', userQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+
+    if (!userQueryResult.data || userQueryResult.data.length === 0) {
+        res.status(404).send('User Not Found');
+        return;
+    }
+
+    const user_id = userQueryResult.data[0].id;
+
+    const actionsQueryResult = await supabase
+        .from('user_purchases')
+        .select(`*, goods (*)`)
+    .eq('user_id', user_id)
+  
+    if (actionsQueryResult.error) {
+        console.error('Error fetching purchases:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.json(actionsQueryResult.data);
+});
+
+
+
 app.get('/users/subscriptions/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
@@ -739,6 +779,63 @@ app.delete('/goods/:id', async (req, res) => {
 });
 
 
+app.post('/goods/buy/userbalance', async (req, res) => {
+    // #swagger.tags = ['Goods']
+    const { telegram_id, goods_id, quantity } = req.body; 
+
+    if (!telegram_id || !goods_id) {
+        return res.status(400).send('telegram_id and goods_id are required');
+    }
+
+
+
+    async function buyGoods(telegramId, goodsId, quantity) {
+        try {
+            
+            const { data, error } = await supabase.rpc('buy_product_balance', {
+                p_telegram_id: telegramId,
+                p_product_id: goodsId,
+                quantity: quantity,
+
+            });
+
+            if (error) {
+                console.error('Ошибка:', error);
+                return null;
+            }
+
+            return data;
+        } catch (err) {
+            console.error('Произошла ошибка при вызове функции:', err);
+            return null;
+        }
+    }
+
+    buyGoods(telegram_id, goods_id, quantity).then(response => {
+        console.log('Response:', response);
+
+        // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
+        if (response === null) {
+            return res.status(500).send('INTERNAL_SERVER_ERROR');
+        }
+
+        if (response === 'Product not found') {
+            return res.status(404).send('PRODUCT_NOT_FOUND');
+        }
+
+        if (response === 'User not found') {
+            return res.status(404).send('USER_NOT_FOUND');
+        }
+
+        if (response === 'Insufficient balance') {
+            return res.status(400).send('INSUFFICIENT_BALANCE');
+        }
+
+        // Отправляем ответ обратно клиенту
+        res.json(response);
+    });
+});
+
 //SUBSCRIPTIONS
 
 app.get('/subscriptions', async (req, res) => {
@@ -871,7 +968,7 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
 
 if (userData.error) {
     console.error('Error fetching user:', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).send('INTERNAL_SERVER_ERROR');
     return;
 }
 
@@ -893,7 +990,7 @@ const user_id = userData.data.id
   
     if (actionsQueryResult.error) {
         console.error('Error fetching subscription:', actionsQueryResult.error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).send('INTERNAL_SERVER_ERROR');
         return;
     }
 
@@ -925,10 +1022,24 @@ const user_id = userData.data.id
     buySubscription(telegram_id, subscription_id).then(response => {
         console.log('Response:', response);
 
-        // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
-        if (response === null) {
-            return res.status(500).send('Internal server error');
-        }
+       
+
+             // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
+             if (response === null) {
+                return res.status(500).send('INTERNAL_SERVER_ERROR');
+            }
+    
+            if (response === 'Subscription not found') {
+                return res.status(404).send('SUBSCRIPTION_NOT_FOUND');
+            }
+    
+            if (response === 'User not found') {
+                return res.status(404).send('USER_NOT_FOUND');
+            }
+    
+            if (response === 'Insufficient balance') {
+                return res.status(400).send('INSUFFICIENT_BALANCE');
+            }
 
         // Отправляем ответ обратно клиенту
         res.json(response);
