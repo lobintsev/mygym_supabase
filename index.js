@@ -135,10 +135,11 @@ app.delete('/users/:id', async (req, res) => {
         user_id: user_id,
     });
 
-    if (error) {
+    if (error.code = '23503') {
         console.error('Ошибка:', error);
-        return null;
-    }
+        res.status(409).send('CONFLICT')
+        return;
+    } 
 
     res.json(data);
 });
@@ -615,11 +616,11 @@ app.get('/users/subscriptions/current/:telegram_id', async (req, res) => {
   
     if (actionsQueryResult.error) {
         if (actionsQueryResult.error.code === 'PGRST116') {
-            res.status(204).send('{}');
+            res.status(204).send('NO_SUBSCRIPTION_CREATED');
             return;
         }
         console.error('Error fetching subscription:', actionsQueryResult.error);
-        res.status(500).send('Internal Server Error');
+        res.status(500).send('INTERNAL_SERVER_ERROR');
         return;
     }
   
