@@ -112,6 +112,18 @@ app.post('/users', async (req, res) => {
         return;
     }
 
+    const user_id = data[0].id;
+
+    const { error: insertBalanceError } = await supabase
+    .from('balance')
+    .insert([{ user_id, amount: 0 }]);
+if (insertBalanceError) {
+    console.error('Error creating balance:', insertBalanceError);   
+    res.status(500).send('Internal Server Error');
+    return;
+}
+
+
     res.status(201).json(data[0]);
 });
 
@@ -602,6 +614,10 @@ app.get('/users/subscriptions/current/:telegram_id', async (req, res) => {
   .single()
   
     if (actionsQueryResult.error) {
+        if (actionsQueryResult.error.code === 'PGRST116') {
+            res.status(204).send('{}');
+            return;
+        }
         console.error('Error fetching subscription:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
@@ -988,14 +1004,11 @@ const user_id = userData.data.id
     .limit(1)
   .single()
   
-    if (actionsQueryResult.error) {
-        console.error('Error fetching subscription:', actionsQueryResult.error);
-        res.status(500).send('INTERNAL_SERVER_ERROR');
-        return;
-    }
+   
 
-   const timestampValue = actionsQueryResult.data.finish
-   console.log(timestampValue)
+const timestampValue = actionsQueryResult?.data?.finish || new Date().toISOString();
+
+console.log(timestampValue)
 
     async function buySubscription(telegramId, subscriptionId) {
         try {
