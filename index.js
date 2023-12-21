@@ -201,6 +201,49 @@ app.patch('/users/:telegram_id', async (req, res) => {
     res.json(updatedUser[0]);
 });
 
+
+app.get('/users/trainers/:telegram_id', async (req, res) => {
+
+    // #swagger.tags = ['Users']
+    const telegram_id = req.params.telegram_id;
+
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('telegram_id', telegram_id)
+        .single()
+
+    if (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    if (data && data.length > 0) {
+        res.json(data);
+    } else {
+        res.status(404).send('User Not Found');
+    }
+
+    const user_id = data.id;
+
+    const { data: userTrainers, error: userTrainersError } = await supabase
+        .from('user_trainers')
+        .select('*, trainers (*)')
+        .eq('user_id', user_id);
+
+    if (userTrainersError) {
+        console.error('Error fetching user:', userTrainersError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.json(userTrainers);
+}
+);
+
+
+
 app.get('/users/actions', async (req, res) => {
     // #swagger.tags = ['Users']
     const { data, error } = await supabase.from('users').select(`
