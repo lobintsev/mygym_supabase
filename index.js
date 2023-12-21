@@ -211,6 +211,7 @@ app.get('/users/trainers/:telegram_id', async (req, res) => {
         .from('users')
         .select('*')
         .eq('telegram_id', telegram_id)
+        .limit(1)
         .single()
 
     if (error) {
@@ -219,8 +220,8 @@ app.get('/users/trainers/:telegram_id', async (req, res) => {
         return;
     }
 
-    if (data && data.length > 0) {
-        res.json(data);
+    if (data) {
+        
     } else {
         res.status(404).send('User Not Found');
     }
