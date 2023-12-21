@@ -626,6 +626,7 @@ app.get('/users/subscriptions/current/:telegram_id', async (req, res) => {
   
     res.json(actionsQueryResult.data);
 });
+
 //LOCATIONS
 
 app.get('/locations', async (req, res) => {
@@ -851,6 +852,113 @@ app.post('/goods/buy/userbalance', async (req, res) => {
         // Отправляем ответ обратно клиенту
         res.json(response);
     });
+});
+
+//TRAINERS
+
+app.get('/trainers', async (req, res) => {
+    // #swagger.tags = ['Trainers']
+    const { data, error } = await supabase
+        .from('trainers')
+        .select('*')
+        .eq('deleted', 'false')
+
+    if (error) {
+        console.error('Error fetching trainers:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.json(data);
+});
+
+app.post('/trainers', async (req, res) => {
+
+    // #swagger.tags = ['Trainers']
+    const { user_id, first_name, last_name, phone } = req.body;
+
+    if (!user_id || !first_name || !last_name || !phone) {
+        res.status(400).send('Bad Request: Missing required fields');
+        return;
+    }
+
+    const { error: insertError } = await supabase
+        .from('trainers')
+        .insert([{ user_id, first_name, last_name, phone }]);
+    if (insertError) {
+        console.error('Error creating trainer:', insertError);
+        if (insertError.code === '23505') {
+            res.status(409).send('Conflict: Trainer with this user_id already exists');
+            return;
+        }
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    const { data, error: selectError } = await supabase
+        .from('trainers')
+        .select('*')
+        .eq('user_id', user_id);
+    if (selectError) {
+
+        console.error('Error fetching trainer:', selectError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.status(201).json(data[0]);
+});
+
+
+app.patch('/trainer/:user_id', async (req, res) => {
+
+    // #swagger.tags = ['Trainers']
+    const {  first_name, last_name, phone} = req.body;
+    const id = req.params.user_id;
+
+    const { error: updateError } = await supabase
+        .from('trainers')
+        .update({ first_name, last_name, phone })
+        .eq('user_id', user_id);
+
+    if (updateError) {
+        console.error('Error updating trainers:', updateError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+
+    const { data, error: selectError } = await supabase
+        .from('trainers')
+        .select('*')
+        .eq('user_id', user_id);
+    if (selectError) {
+
+        console.error('Error fetching trainers:', selectError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.status(201).json(data[0]);
+});
+
+app.delete('/trainers/:user_id', async (req, res) => {
+    // #swagger.tags = ['Trainers']
+    const id = req.params.user_id;
+
+    const { error: deleteError } = await supabase
+        .from('trainers')
+        .delete()
+        .eq('user_id', user_id);
+
+    if (deleteError) {
+        console.error('Error deleting trainer:', deleteError);
+        
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.status(204).send();
 });
 
 //SUBSCRIPTIONS
