@@ -243,7 +243,64 @@ app.get('/users/trainers/:telegram_id', async (req, res) => {
 }
 );
 
+app.post('/users/trainers/assign/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
 
+    const { trainers_id } = req.body;
+    const telegram_id = req.params.telegram_id;
+   
+    if (!trainers_id) {
+        res.status(400).send('Bad Request: Missing required fields');
+        return;
+    }
+
+
+ const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('telegram_id', telegram_id)
+    .limit(1)
+    .single()
+  
+
+
+    if (error) {
+
+        console.error('Error fetching user:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    if (!data) {
+        res.status(404).send('USER_NOT_FOUND');
+        return;
+    }
+
+    const users_id = data.id;
+
+    const { data: userTrainersData, error: userTrainersError } = await supabase
+    .from('user_trainers')
+    .insert([{ users_id, trainers_id }]);
+
+
+    if (userTrainersError) {
+        console.error('Error creating userTrainers:', userTrainersError);
+        if (userTrainersError.code === '23505') {
+    res.status(409).send('USER_TRAINERS_ALREADY_EXISTS');
+            return;
+        }
+        if (userTrainersError.code === '23503') {
+            res.status(409).send('TRAINERS_NOT_FOUND');
+            return;
+        }
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+
+
+    res.status(201).json(userTrainersData);
+});
 
 app.get('/users/actions', async (req, res) => {
     // #swagger.tags = ['Users']
@@ -905,7 +962,7 @@ app.get('/trainers', async (req, res) => {
     const { data, error } = await supabase
         .from('trainers')
         .select('*')
-        .eq('deleted', 'false')
+        .is('deleted', false)
 
     if (error) {
         console.error('Error fetching trainers:', error);
@@ -958,7 +1015,7 @@ app.patch('/trainer/:user_id', async (req, res) => {
 
     // #swagger.tags = ['Trainers']
     const {  first_name, last_name, phone} = req.body;
-    const id = req.params.user_id;
+    const user_id = req.params.user_id;
 
     const { error: updateError } = await supabase
         .from('trainers')
@@ -988,7 +1045,7 @@ app.patch('/trainer/:user_id', async (req, res) => {
 
 app.delete('/trainers/:user_id', async (req, res) => {
     // #swagger.tags = ['Trainers']
-    const id = req.params.user_id;
+    const user_id = req.params.user_id;
 
     const { error: deleteError } = await supabase
         .from('trainers')
