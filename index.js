@@ -65,7 +65,7 @@ app.post('/alice/devices/onoff/:deviceId', async (req, res) => {
 
 //USERS
 
-app.get('/users', async (req, res) => {
+app.get('/users/list', async (req, res) => {
     // #swagger.tags = ['Users']
     const { data, error } = await supabase
         .from('users')
@@ -144,7 +144,7 @@ app.delete('/users/:id', async (req, res) => {
     res.json(data);
 });
 
-app.get('/users/:telegram_id', async (req, res) => {
+app.get('/users/list/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
 
@@ -539,6 +539,38 @@ app.get('/users/purchases/:telegram_id', async (req, res) => {
 });
 
 
+app.get('/users/subscriptions/', async (req, res) => {
+    // #swagger.tags = ['Users']
+    // #swagger.parameters['subscription_id'] = { description: 'Subscription ID', type: 'array', items: { type: 'integer' } }
+    // #swagger.parameters['days_to_finish'] = { description: 'Days to Finish', type: 'integer' }
+
+    let subInputString = req.query.subscription_id; // Get the subscription IDs from the query parameters
+    let daysToFinish = parseInt(req.query.days_to_finish); // Get the days_to_finish from the query parameters
+
+    // Ensure subscriptionIds is an array and convert each element to an integer
+    let subscriptionIds = subInputString.split(',').map(Number);
+
+    let { data, error } = await supabase
+        .rpc('retrieve_current_subscription');
+
+    if (error) {
+        console.error('Error fetching users:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    // Calculate the cutoff date
+    let cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() + daysToFinish);
+
+    // Filter the data based on the subscription IDs and days_to_finish
+    data = data.filter(item => 
+        subscriptionIds.includes(item.subscription_id) &&
+        new Date(item.finish) <= cutoffDate
+    );
+
+    res.json(data);
+});
 
 app.get('/users/subscriptions/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
@@ -1494,5 +1526,5 @@ app.post('/webhooks/tinkoff/notifications', async (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`App is running on http://localhost:${port}`);
+    console.log(`App is running on http://localhost:${port}/doc`);
 });
