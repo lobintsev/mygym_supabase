@@ -166,6 +166,28 @@ app.get('/users/list/:telegram_id', async (req, res) => {
     }
 });
 
+app.get('/users/list/:id', async (req, res) => {
+    // #swagger.tags = ['Users']
+    const id = req.params.id;
+
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    if (data && data.length > 0) {
+        res.json(data[0]);
+    } else {
+        res.status(404).send('User Not Found');
+    }
+});
+
 app.patch('/users/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
