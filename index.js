@@ -65,19 +65,41 @@ app.post('/alice/devices/onoff/:deviceId', async (req, res) => {
 
 //USERS
 
-app.get('/users/list', async (req, res) => {
+app.get('/users', async (req, res) => {
     // #swagger.tags = ['Users']
-    const { data, error } = await supabase
-        .from('users')
-        .select('*');
+    
+    const userId = req.query.user_id;
+    const telegramId = req.query.telegram_id;
 
-    if (error) {
-        console.error('Error fetching users:', error);
+    try {
+        // Initialize query builder
+        let query = supabase.from('users').select('*');
+
+        // Apply filters based on query parameters if provided
+        if (userId) {
+            query = query.eq('id', userId);
+        }
+        if (telegramId) {
+            query = query.eq('telegram_id', telegramId);
+        }
+
+        // Execute the query
+        const { data, error } = await query;
+
+        // Handle possible errors from the query
+        if (error) {
+            console.error('Error fetching users:', error);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+
+        // Send the retrieved data as a JSON response
+        res.json(data);
+    } catch (err) {
+        // Catch any other errors that may occur and send an appropriate response
+        console.error('Unexpected error:', err);
         res.status(500).send('Internal Server Error');
-        return;
     }
-
-    res.json(data);
 });
 
 app.post('/users', async (req, res) => {
@@ -169,11 +191,13 @@ app.get('/users/list/:telegram_id', async (req, res) => {
 app.get('/users/list/:id', async (req, res) => {
     // #swagger.tags = ['Users']
     const id = req.params.id;
-
+console.log(id);
     const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', id);
+        .eq('id', id)
+        .limit(1)
+        .single()
 
     if (error) {
         console.error('Error fetching user:', error);
@@ -181,8 +205,8 @@ app.get('/users/list/:id', async (req, res) => {
         return;
     }
 
-    if (data && data.length > 0) {
-        res.json(data[0]);
+    if (data) {
+        res.json(data);
     } else {
         res.status(404).send('User Not Found');
     }
