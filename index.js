@@ -93,6 +93,10 @@ app.get('/users', async (req, res) => {
             return;
         }
 
+        if (data && data.length == 0) {
+            res.status(204).send('No data found');
+        }
+
         // Send the retrieved data as a JSON response
         res.json(data);
     } catch (err) {
