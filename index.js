@@ -695,7 +695,8 @@ app.get('/users/subscriptions/status/:telegram_id', async (req, res) => {
         .select(`
       *, 
       subscriptions (
-        *
+        *, user_subscription_status ( 
+            *)
       )
     `)
         .eq('user_id', user_id)
@@ -712,6 +713,57 @@ app.get('/users/subscriptions/status/:telegram_id', async (req, res) => {
     }
 
     res.json(hasSubscriptions);
+});
+
+app.patch('/users/subscriptions/status/:telegram_id', async (req, res) => {
+    // #swagger.tags = ['Users']
+    const telegram_id = req.params.telegram_id;
+    const validStatusValues = ['ACTIVE', 'PAUSED', 'CANCELED'];
+    const { subscription_id, status } = req.body;
+
+console.log(req.body);
+    if (!validStatusValues.includes(status)) {
+        res.status(400).send('Invalid status value');
+        return;
+    }
+
+    // Ваш код для обработки запроса с правильным значением статуса
+    const userQueryResult = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id);
+
+    if (userQueryResult.error) {
+        console.error('Error fetching user:', userQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    if (!userQueryResult.data || userQueryResult.data.length === 0) {
+        res.status(404).send('User Not Found');
+        return;
+    }
+
+    const user_id = userQueryResult.data[0].id;
+
+    const actionsQueryResult = await supabase
+        .from('user_subscription_status')
+        .upsert([
+            { 
+                user_id: user_id, 
+                subscription_id: subscription_id, 
+                status: status 
+            }
+        ], { returning: 'minimal' }) // 'minimal' возвращает только количество затронутых строк
+
+    if (actionsQueryResult.error) {
+        console.error('Error upserting data:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    console.log(actionsQueryResult);
+    res.json(actionsQueryResult);
 });
 
 app.get('/users/subscriptions/:telegram_id', async (req, res) => {
