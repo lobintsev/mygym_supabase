@@ -591,39 +591,45 @@ app.get('/users/purchases/:telegram_id', async (req, res) => {
 
 app.get('/users/subscriptions/', async (req, res) => {
     // #swagger.tags = ['Users']
+    // #swagger.description = 'Get all subscriptions'
     // #swagger.parameters['subscription_id'] = { description: 'Subscription ID', type: 'array', items: { type: 'integer' } }
-    // #swagger.parameters['days_to_finish'] = { description: 'Days to Finish', type: 'integer' }
+    // #swagger.parameters['from_date'] = { description: 'From date', type: 'timestampz' }
+    // #swagger.parameters['to_date'] = { description: 'To date', type: 'timestampz' }
+    // #swagger.parameters['status'] = { description: 'Status', type: 'enum', enum: ['ACTIVE', 'PAUSED', 'CANCELED'] }
 
     let subInputString = req.query.subscription_id; // Get the subscription IDs from the query parameters
-    let daysToFinish = parseInt(req.query.days_to_finish); // Get the days_to_finish from the query parameters
+    let finish_date = req.query.to_date; // Get the finish date from the query parameters
+    let start_date = req.query.from_date; // Get the start date from the query parameters
+    let status = req.query.status; // Get the status from the query parameters
 
-    // Ensure subscriptionIds is an array and convert each element to an integer
-    let subscriptionIds = subInputString.split(',').map(Number);
+    let query = supabase
+    .from('user_subscriptions')
+    .select('*')
+    .filter(finish_date ? 'finish' : '', finish_date ? 'lte' : '', finish_date || '')
+    .filter(start_date ? 'start' : '', start_date ? 'gte' : '', start_date || '')
 
-    let { data, error } = await supabase
-        .rpc('retrieve_current_subscription');
+if (subInputString) {
+    query = query.in('subscription_id', subInputString.split(','));
+}
+if (status) {
+    query = query.in('status', status.split(','));
+}
 
-    if (error) {
-        console.error('Error fetching users:', error);
+const userQueryResult = await query;
+
+    if (userQueryResult.error) {
+        console.error('Error fetching user subscriptions:', userQueryResult.error);
         res.status(500).send('Internal Server Error');
         return;
     }
 
-    // Calculate the cutoff date
-    let cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() + daysToFinish);
+    res.json(userQueryResult.data);
 
-    // Filter the data based on the subscription IDs and days_to_finish
-    data = data.filter(item => 
-        subscriptionIds.includes(item.subscription_id) &&
-        new Date(item.finish) <= cutoffDate
-    );
-
-    res.json(data);
 });
 
 app.get('/users/subscriptions/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
+    // #swagger.description = 'Get all subscriptions for User by Telegram ID'
     const telegram_id = req.params.telegram_id;
 
 
@@ -655,7 +661,7 @@ app.get('/users/subscriptions/:telegram_id', async (req, res) => {
       )
     `)
     .eq('user_id', user_id)
-    .gte('finish', new Date().toISOString()); 
+    
   
     if (actionsQueryResult.error) {
         console.error('Error fetching subscription:', actionsQueryResult.error);
@@ -666,8 +672,9 @@ app.get('/users/subscriptions/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult.data);
 });
 
-app.get('/users/subscriptions/status/:telegram_id', async (req, res) => {
+app.get('/users/subscriptions/check/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
+    // #swagger.description = 'Check if user has any active subscriptions'
     const telegram_id = req.params.telegram_id;
 
 
@@ -692,19 +699,12 @@ app.get('/users/subscriptions/status/:telegram_id', async (req, res) => {
 
     const actionsQueryResult = await supabase
         .from('user_subscriptions')
-        .select(`
-      *, 
-      subscriptions (
-        *, user_subscription_status ( 
-            *)
-      )
-    `)
+            .select("*")
         .eq('user_id', user_id)
+        .eq('status', 'ACTIVE')
         .gte('finish', new Date().toISOString());
 
     const hasSubscriptions = actionsQueryResult.data.length > 0;
-    res.json(hasSubscriptions);
-
 
     if (actionsQueryResult.error) {
         console.error('Error fetching balance:', actionsQueryResult.error);
@@ -712,11 +712,16 @@ app.get('/users/subscriptions/status/:telegram_id', async (req, res) => {
         return;
     }
 
-    res.json(hasSubscriptions);
+    let result = {
+        'status': hasSubscriptions
+    };
+    res.json(result);
 });
 
-app.patch('/users/subscriptions/status/:telegram_id', async (req, res) => {
+app.patch('/users/subscriptions/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
+    // #swagger.description = 'Update subscription. Only status field avaliable for now! Periods and other fields will be added later'
+    // #swagger.parameters['status'] = { in: 'body', description: 'Status', type: 'string', enum: ['ACTIVE', 'PAUSED', 'CANCELED'] }
     const telegram_id = req.params.telegram_id;
     const validStatusValues = ['ACTIVE', 'PAUSED', 'CANCELED'];
     const { subscription_id, status } = req.body;
@@ -727,7 +732,8 @@ console.log(req.body);
         return;
     }
 
-    // Ваш код для обработки запроса с правильным значением статуса
+    // Получить user_id из таблицы users
+
     const userQueryResult = await supabase
         .from('users')
         .select('id')
@@ -747,14 +753,14 @@ console.log(req.body);
     const user_id = userQueryResult.data[0].id;
 
     const actionsQueryResult = await supabase
-        .from('user_subscription_status')
-        .upsert([
+        .from('user_subscriptions')
+        .upsert(
             { 
                 user_id: user_id, 
                 subscription_id: subscription_id, 
                 status: status 
             }
-        ], { returning: 'minimal' }) // 'minimal' возвращает только количество затронутых строк
+        , { ignoreDuplicates: false, onConflict: 'user_id, subscription_id' })
 
     if (actionsQueryResult.error) {
         console.error('Error upserting data:', actionsQueryResult.error);
@@ -764,102 +770,6 @@ console.log(req.body);
 
     console.log(actionsQueryResult);
     res.json(actionsQueryResult);
-});
-
-app.get('/users/subscriptions/:telegram_id', async (req, res) => {
-    // #swagger.tags = ['Users']
-    const telegram_id = req.params.telegram_id;
-  
- 
-    const userQueryResult = await supabase
-        .from('users')
-        .select('id')
-        .eq('telegram_id', telegram_id);
-  
-    if (userQueryResult.error) {
-        console.error('Error fetching user:', userQueryResult.error);
-        res.status(500).send('Internal Server Error');
-        return;
-    }
-  
-
-    if (!userQueryResult.data || userQueryResult.data.length === 0) {
-        res.status(404).send('User Not Found');
-        return;
-    }
-  
-    const user_id = userQueryResult.data[0].id;
-
-    const actionsQueryResult = await supabase
-    .from('user_subscriptions')
-    .select(`
-      *, 
-      subscriptions (
-        *
-      )
-    `)
-    .eq('user_id', user_id) 
-    .order('finish', { ascending: true })
-    .gte('finish', new Date().toISOString()); 
-  
-    if (actionsQueryResult.error) {
-        console.error('Error fetching subscription:', actionsQueryResult.error);
-        res.status(500).send('Internal Server Error');
-        return;
-    }
-  
-    res.json(actionsQueryResult.data);
-});
-
-app.get('/users/subscriptions/current/:telegram_id', async (req, res) => {
-    // #swagger.tags = ['Users']
-    const telegram_id = req.params.telegram_id;
-  
- 
-    const userQueryResult = await supabase
-        .from('users')
-        .select('id')
-        .eq('telegram_id', telegram_id);
-  
-    if (userQueryResult.error) {
-        console.error('Error fetching user:', userQueryResult.error);
-        res.status(500).send('Internal Server Error');
-        return;
-    }
-
-
-    if (!userQueryResult.data || userQueryResult.data.length === 0) {
-        res.status(404).send('User Not Found');
-        return;
-    }
-  
-    const user_id = userQueryResult.data[0].id;
-
-    const actionsQueryResult = await supabase
-    .from('user_subscriptions')
-    .select(`
-      *, 
-      subscriptions (
-        *
-      )
-    `)
-    .eq('user_id', user_id)
-    .gte('finish', new Date().toISOString())
-    .order('finish', {ascending: false})
-    .limit(1)
-  .single()
-  
-    if (actionsQueryResult.error) {
-        if (actionsQueryResult.error.code === 'PGRST116') {
-            res.status(204).send('NO_SUBSCRIPTION_CREATED');
-            return;
-        }
-        console.error('Error fetching subscription:', actionsQueryResult.error);
-        res.status(500).send('INTERNAL_SERVER_ERROR');
-        return;
-    }
-  
-    res.json(actionsQueryResult.data);
 });
 
 //LOCATIONS
