@@ -445,7 +445,7 @@ app.get('/users/balance/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult.data[0]);
 });
 
-app.post('/users/balance/:telegram_id/deposit', async (req, res) => {
+app.post('/users/balance/:telegram_id/topup', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
     const { amount } = req.body;
@@ -509,7 +509,74 @@ app.post('/users/balance/:telegram_id/deposit', async (req, res) => {
         }
     }
 
-    res.status(201).send('Deposit successful');
+    res.status(201).send('Topup successful');
+});
+
+app.post('/users/balance/:telegram_id/chargeoff', async (req, res) => {
+    // #swagger.tags = ['Users']
+    const telegram_id = req.params.telegram_id;
+    const { amount } = req.body;
+
+    // Проверка входных данных
+    if (!amount || isNaN(amount) || amount <= 0) {
+        res.status(400).send('Bad Request: Invalid amount');
+        return;
+    }
+
+    // Получить user_id из таблицы users
+    const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('telegram_id', telegram_id);
+
+    if (userError || !userData || userData.length === 0) {
+        console.error('Error fetching user:', userError || 'User not found');
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    const user_id = userData[0].id;
+
+    // Создать новую запись в таблице transactions
+    const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert([{ user_id, amount, type: 'WITH' }]);
+
+    if (transactionError) {
+        console.error('Error creating transaction:', transactionError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    // Проверьте, существует ли запись balance для user_id
+    const { data: balanceData, error: balanceCheckError } = await supabase
+        .from('balance')
+        .select('user_id')
+        .eq('user_id', user_id);
+
+    if (balanceCheckError || !balanceData || balanceData.length === 0) {
+        const { error: balanceCreateError } = await supabase
+            .from('balance')
+            .insert([{ user_id, amount: -amount }]);
+
+        if (balanceCreateError) {
+            console.error('Error creating balance:', balanceCreateError);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+    } else {
+        // Обновите запись в таблице balance для user_id, если запись уже существует
+        const { error: balanceUpdateError } = await supabase
+            .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(-amount) });
+
+        if (balanceUpdateError) {
+            console.error('Error updating balance:', balanceUpdateError);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+    }
+
+    res.status(201).send('Chargeoff successful');
 });
 
 app.get('/users/transactions/:telegram_id', async (req, res) => {
@@ -1400,10 +1467,11 @@ app.post('/payment/tinkoff/init', async (req, res) => {
     // #swagger.tags = ['Payments']
     const ordernumber = req.body.order_number;
 
+
     // Прочесть запись в таблице orders и получить данные созданного заказа
     const { data: orderData, error: orderError } = await supabase
         .from('orders')
-        .select()
+        .select('*, users (*)')
         .eq('number', ordernumber)
     console.log(orderData);
     // Инициализируем платеж Тинькофф
@@ -1412,7 +1480,7 @@ app.post('/payment/tinkoff/init', async (req, res) => {
     const orderId = ordernumber;
     const merchantPassword = process.env.TINKOFF_PASSWORD; // Пароль мерчанта
     const notificationURL = 'https://api.mygym.world/webhooks/tinkoff/notifications';
-    const customerKey = '12345'
+    const customerKey = orderData[0].users.telegram_id;
 
     const paymentInitResult = await initPayment(notificationURL, terminalKey, amount, orderId, merchantPassword, customerKey)
 

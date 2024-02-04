@@ -10,7 +10,7 @@ async function initPayment(notificationURL, terminalKey, amount, orderId, mercha
     OrderId: orderId,
     NotificationURL: notificationURL,
     CustomerKey: customerKey,
-    DATA: { telegram_id: 12345 }
+    DATA: { telegram_id: customerKey }
   };
 console.log(requestBody);
   // Генерируем токен
