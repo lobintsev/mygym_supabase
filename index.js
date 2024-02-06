@@ -406,6 +406,30 @@ app.get('/users/actions/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult.data);
 });
 
+app.get('/users/balance', async (req, res) => {
+    // #swagger.tags = ['Users']
+    // #swagger.parameters['negative'] = { description: 'Show only negative balance', type: 'boolean' }
+    const negative = req.query.negative;
+    
+    let actionsQuery = supabase
+        .from('balance')
+        .select('*, users(first_name, last_name, telegram_id)')
+
+    if (negative) {
+        actionsQuery = actionsQuery.lt('amount', 0); // Remove the unnecessary comma
+    }
+
+    const actionsQueryResult = await actionsQuery; // Await the actionsQuery
+
+    if (actionsQueryResult.error) {
+        console.error('Error fetching balances:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.json(actionsQueryResult.data[0]);
+});
+
 
 app.get('/users/balance/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
@@ -1291,7 +1315,8 @@ app.delete('/subscriptions/:id', async (req, res) => {
 
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
-    const { telegram_id, subscription_id, timestamp } = req.body; 
+    // #swagger.parameters['negative_allowed'] = {in: 'body', description: 'Allow negative balance', type: 'boolean' }
+    const { telegram_id, subscription_id, negative_allowed} = req.body; 
 
     if (!telegram_id || !subscription_id) {
         return res.status(400).send('telegram_id and subscription_id are required');
@@ -1334,11 +1359,10 @@ console.log(timestampValue)
     async function buySubscription(telegramId, subscriptionId) {
         try {
             
-            const { data, error } = await supabase.rpc('buy_subscription_balance_startdate', {
+            const { data, error } = await supabase.rpc(negative_allowed ? 'activate_subscription_negative_balance' : 'buy_subscription_balance_startdate', {
                 p_start_date: timestampValue,
                 p_telegram_id: telegramId,
                 p_subscription_id: subscriptionId,
-
             });
 
             if (error) {
