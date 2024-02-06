@@ -1309,10 +1309,6 @@ app.delete('/subscriptions/:id', async (req, res) => {
 });
 
 
-
-
-
-
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
     // #swagger.parameters['negative_allowed'] = {in: 'body', description: 'Allow negative balance', type: 'boolean' }
