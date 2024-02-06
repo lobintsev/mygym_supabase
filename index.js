@@ -170,51 +170,6 @@ app.delete('/users/:id', async (req, res) => {
     res.json(data);
 });
 
-app.get('/users/list/:telegram_id', async (req, res) => {
-    // #swagger.tags = ['Users']
-    const telegram_id = req.params.telegram_id;
-
-    const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('telegram_id', telegram_id);
-
-    if (error) {
-        console.error('Error fetching user:', error);
-        res.status(500).send('Internal Server Error');
-        return;
-    }
-
-    if (data && data.length > 0) {
-        res.json(data[0]);
-    } else {
-        res.status(404).send('User Not Found');
-    }
-});
-
-app.get('/users/list/:id', async (req, res) => {
-    // #swagger.tags = ['Users']
-    const id = req.params.id;
-console.log(id);
-    const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', id)
-        .limit(1)
-        .single()
-
-    if (error) {
-        console.error('Error fetching user:', error);
-        res.status(500).send('Internal Server Error');
-        return;
-    }
-
-    if (data) {
-        res.json(data);
-    } else {
-        res.status(404).send('User Not Found');
-    }
-});
 
 app.patch('/users/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
