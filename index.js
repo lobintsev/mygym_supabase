@@ -1281,7 +1281,7 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
 
 if (userData.error) {
     console.error('Error fetching user:', error);
-    res.status(500).send('INTERNAL_SERVER_ERROR');
+    res.status(404).send('USER_NOT_FOUND');
     return;
 }
 
@@ -1304,8 +1304,9 @@ const user_id = userData.data.id
    
 
 const timestampValue = actionsQueryResult?.data?.finish || new Date().toISOString();
+console.log(typeof timestampValue, timestampValue)
+console.log(typeof telegram_id, telegram_id)
 
-console.log(timestampValue)
 
     async function buySubscription(telegramId, subscriptionId) {
         try {
