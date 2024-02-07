@@ -365,13 +365,18 @@ app.get('/users/balance', async (req, res) => {
     // #swagger.tags = ['Users']
     // #swagger.parameters['negative'] = { description: 'Show only negative balance', type: 'boolean' }
     const negative = req.query.negative;
+    const telegram_id = req.query.telegram_id;
     
     let actionsQuery = supabase
         .from('balance')
-        .select('*, users(first_name, last_name, telegram_id)')
+        .select('*, users!inner (first_name, last_name, telegram_id)')
+        
 
-    if (negative) {
+    if (negative === 'true') {
         actionsQuery = actionsQuery.lt('amount', 0); // Remove the unnecessary comma
+    }
+    if (telegram_id) {
+        actionsQuery = actionsQuery.eq('users.telegram_id', telegram_id); // Remove the unnecessary comma
     }
 
     const actionsQueryResult = await actionsQuery; // Await the actionsQuery
@@ -382,7 +387,7 @@ app.get('/users/balance', async (req, res) => {
         return;
     }
 
-    res.json(actionsQueryResult.data[0]);
+    res.json(actionsQueryResult.data);
 });
 
 
@@ -647,10 +652,11 @@ app.get('/users/subscriptions/', async (req, res) => {
     let finish_date = req.query.to_date; // Get the finish date from the query parameters
     let start_date = req.query.from_date; // Get the start date from the query parameters
     let status = req.query.status; // Get the status from the query parameters
+    let telegram_id = req.query.telegram_id; // Get the telegram_id from the query parameters
 
     let query = supabase
     .from('user_subscriptions')
-    .select('*')
+    .select('*, users!inner (*)')
     .filter(finish_date ? 'finish' : '', finish_date ? 'lte' : '', finish_date || '')
     .filter(start_date ? 'start' : '', start_date ? 'gte' : '', start_date || '')
 
@@ -659,6 +665,9 @@ if (subInputString) {
 }
 if (status) {
     query = query.in('status', status.split(','));
+}
+if (telegram_id) {
+    query = query.eq('users.telegram_id', telegram_id); // Remove the unnecessary comma
 }
 
 const userQueryResult = await query;
