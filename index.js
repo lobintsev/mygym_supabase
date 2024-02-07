@@ -1305,15 +1305,15 @@ const user_id = userData.data.id
 
 const timestampValue = actionsQueryResult?.data?.finish || new Date().toISOString();
 console.log(typeof timestampValue, timestampValue)
-console.log(typeof telegram_id, telegram_id)
 
 
-    async function buySubscription(telegramId, subscriptionId) {
+
+    async function buySubscription(user_id, subscriptionId) {
         try {
-            
-            const { data, error } = await supabase.rpc(negative_allowed ? 'activate_subscription_negative_balance' : 'buy_subscription_balance_startdate', {
+           
+            const { data, error } = await supabase.rpc(negative_allowed ? 'activate_subscription_negative_balance' : 'activate_subscription_positive_balance', {
                 p_start_date: timestampValue,
-                p_telegram_id: telegramId,
+                p_user_id: user_id,
                 p_subscription_id: subscriptionId,
             });
 
@@ -1329,7 +1329,7 @@ console.log(typeof telegram_id, telegram_id)
         }
     }
 
-    buySubscription(telegram_id, subscription_id).then(response => {
+    buySubscription(user_id, subscription_id).then(response => {
         console.log('Response:', response);
 
        
