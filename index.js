@@ -648,7 +648,7 @@ app.get('/users/subscriptions/', async (req, res) => {
     // #swagger.parameters['to_date'] = { description: 'To date', type: 'timestampz' }
     // #swagger.parameters['status'] = { description: 'Status', type: 'enum', enum: ['ACTIVE', 'PAUSED', 'CANCELED'] }
 
-    // let subInputString = req.query.subscription_id; // Get the subscription IDs from the query parameters
+    let subInputString = req.query.subscription_id; // Get the subscription IDs from the query parameters
     let finish_date = req.query.to_date; // Get the finish date from the query parameters
     let start_date = req.query.from_date; // Get the start date from the query parameters
     let status = req.query.status; // Get the status from the query parameters
@@ -656,7 +656,7 @@ app.get('/users/subscriptions/', async (req, res) => {
 
     let query = supabase
     .from('user_subscriptions')
-    .select('*, users (*)')
+    .select('*, users!inner (*)')
     .filter(finish_date ? 'finish' : '', finish_date ? 'lte' : '', finish_date || '')
     .filter(start_date ? 'start' : '', start_date ? 'gte' : '', start_date || '')
 
