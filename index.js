@@ -1288,11 +1288,10 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
 
 if (actionsQueryResult.error) {
         console.error('Error fetching user subscriptions:', actionsQueryResult.error);
-        res.status(500).send('Internal Server Error');
-        return;
+       
     }
 console.log(actionsQueryResult.data);
-    if (actionsQueryResult.data.subscription_id === subscription_id && actionsQueryResult.data.status === 'ACTIVE') {
+    if (actionsQueryResult?.data?.subscription_id === subscription_id && actionsQueryResult?.data?.status === 'ACTIVE') {
         res.status(400).send('ALREADY_HAVE_ACTIVE_SUBSCRIPTION');
         return;
     }
