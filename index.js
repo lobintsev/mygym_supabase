@@ -23,7 +23,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Создайте экземпляр rate limiter
 const limiter = rateLimit({
-    windowMs: 1000, // 1 секунда
+    windowMs: 10000, // 1 секунда
     max: 1, // лимит каждого user_id до 1 запросов в течение windowMs
     keyGenerator: function (req) {
         return req.body.user_id || req.body.telegram_id; // используйте user_id в теле запроса как ключ
@@ -40,8 +40,8 @@ const speedLimiter = slowDown({
     }
 });
 
-app.use("subscription/buy/userbalance", limiter, speedLimiter);
-app.use("goods/buy/userbalance", limiter, speedLimiter);
+app.use("/subscriptions/buy/userbalance", limiter, speedLimiter);
+app.use("/goods/buy/userbalance", limiter, speedLimiter);
 
 
 
@@ -1279,21 +1279,26 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
 
     const actionsQueryResult = await supabase
         .from('user_subscriptions')
-        .select(`
-      *, 
-      subscriptions (
-        *
-      )
-    `)
+        .select("*")
         .eq('user_id', user_id)
-        .gte('finish', new Date().toISOString())
+        .eq('subscription_id', subscription_id)
+        
         .order('finish', { ascending: false })
         .limit(1)
         .single()
 
+if (actionsQueryResult.error) {
+        console.error('Error fetching user subscriptions:', actionsQueryResult.error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+console.log(actionsQueryResult.data);
+    if (actionsQueryResult.data.subscription_id === subscription_id && actionsQueryResult.data.status === 'ACTIVE') {
+        res.status(400).send('ALREADY_HAVE_ACTIVE_SUBSCRIPTION');
+        return;
+    }
 
-
-    const timestampValue = actionsQueryResult?.data?.finish || new Date().toISOString();
+    const timestampValue =  new Date().toISOString();
 
 
 
