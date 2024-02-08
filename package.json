@@ -18,6 +18,8 @@
     "crypto": "^1.0.1",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-slow-down": "^2.0.1",
     "swagger-autogen": "^2.23.6",
     "swagger-ui-express": "^5.0.0"
   },

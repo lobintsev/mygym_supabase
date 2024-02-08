@@ -8,6 +8,8 @@ const swaggerUi = require('swagger-ui-express')
 const swaggerFile = require('./swagger_output.json')
 const initPayment = require('./src/helpers/tinkoff/init.js');
 const sendPostMessage = require('./src/helpers/sendPostMessage.js');
+const rateLimit = require("express-rate-limit");
+const slowDown = require("express-slow-down");
 
 
 const app = express();
@@ -18,6 +20,30 @@ app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Создайте экземпляр rate limiter
+const limiter = rateLimit({
+    windowMs: 1000, // 1 секунда
+    max: 1, // лимит каждого user_id до 1 запросов в течение windowMs
+    keyGenerator: function (req) {
+        return req.body.user_id || req.body.telegram_id; // используйте user_id в теле запроса как ключ
+    }
+});
+
+// Создайте экземпляр slow down
+const speedLimiter = slowDown({
+    windowMs: 5000, // 1 секунда
+    delayAfter: 1, // начать замедлять после 1 запроса
+    delayMs: () => 500, // замедлить на 500 мс каждый последующий запрос
+    keyGenerator: function (req) {
+        return req.body.user_id || req.body.telegram_id; // используйте user_id в теле запроса как ключ
+    }
+});
+
+app.use("/buy/subscription/userbalance", limiter, speedLimiter);
+app.use("/buy/subscription/userbalance", limiter, speedLimiter);
+
+
 
 //ALICE
 
@@ -67,7 +93,7 @@ app.post('/alice/devices/onoff/:deviceId', async (req, res) => {
 
 app.get('/users', async (req, res) => {
     // #swagger.tags = ['Users']
-    
+
     const userId = req.query.user_id;
     const telegramId = req.query.telegram_id;
 
@@ -141,13 +167,13 @@ app.post('/users', async (req, res) => {
     const user_id = data[0].id;
 
     const { error: insertBalanceError } = await supabase
-    .from('balance')
-    .insert([{ user_id, amount: 0 }]);
-if (insertBalanceError) {
-    console.error('Error creating balance:', insertBalanceError);   
-    res.status(500).send('Internal Server Error');
-    return;
-}
+        .from('balance')
+        .insert([{ user_id, amount: 0 }]);
+    if (insertBalanceError) {
+        console.error('Error creating balance:', insertBalanceError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
 
 
     res.status(201).json(data[0]);
@@ -165,7 +191,7 @@ app.delete('/users/:id', async (req, res) => {
         console.error('Ошибка:', error);
         res.status(409).send('CONFLICT')
         return;
-    } 
+    }
 
     res.json(data);
 });
@@ -226,7 +252,7 @@ app.get('/users/trainers/:telegram_id', async (req, res) => {
     }
 
     if (data) {
-        
+
     } else {
         res.status(404).send('User Not Found');
     }
@@ -253,20 +279,20 @@ app.post('/users/trainers/assign/:telegram_id', async (req, res) => {
 
     const { trainers_id } = req.body;
     const telegram_id = req.params.telegram_id;
-   
+
     if (!trainers_id) {
         res.status(400).send('Bad Request: Missing required fields');
         return;
     }
 
 
- const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('telegram_id', telegram_id)
-    .limit(1)
-    .single()
-  
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('telegram_id', telegram_id)
+        .limit(1)
+        .single()
+
 
 
     if (error) {
@@ -284,14 +310,14 @@ app.post('/users/trainers/assign/:telegram_id', async (req, res) => {
     const users_id = data.id;
 
     const { data: userTrainersData, error: userTrainersError } = await supabase
-    .from('user_trainers')
-    .insert([{ users_id, trainers_id }]);
+        .from('user_trainers')
+        .insert([{ users_id, trainers_id }]);
 
 
     if (userTrainersError) {
         console.error('Error creating userTrainers:', userTrainersError);
         if (userTrainersError.code === '23505') {
-    res.status(409).send('USER_TRAINERS_ALREADY_EXISTS');
+            res.status(409).send('USER_TRAINERS_ALREADY_EXISTS');
             return;
         }
         if (userTrainersError.code === '23503') {
@@ -366,11 +392,11 @@ app.get('/users/balance', async (req, res) => {
     // #swagger.parameters['negative'] = { description: 'Show only negative balance', type: 'boolean' }
     const negative = req.query.negative;
     const telegram_id = req.query.telegram_id;
-    
+
     let actionsQuery = supabase
         .from('balance')
         .select('*, users!inner (first_name, last_name, telegram_id)')
-        
+
 
     if (negative === 'true') {
         actionsQuery = actionsQuery.lt('amount', 0); // Remove the unnecessary comma
@@ -628,8 +654,8 @@ app.get('/users/purchases/:telegram_id', async (req, res) => {
     const actionsQueryResult = await supabase
         .from('user_purchases')
         .select(`*, goods (*)`)
-    .eq('user_id', user_id)
-  
+        .eq('user_id', user_id)
+
     if (actionsQueryResult.error) {
         console.error('Error fetching purchases:', actionsQueryResult.error);
         res.status(500).send('Internal Server Error');
@@ -655,22 +681,22 @@ app.get('/users/subscriptions/', async (req, res) => {
     let telegram_id = req.query.telegram_id; // Get the telegram_id from the query parameters
 
     let query = supabase
-    .from('user_subscriptions')
-    .select('*, users!inner (*)')
-    .filter(finish_date ? 'finish' : '', finish_date ? 'lte' : '', finish_date || '')
-    .filter(start_date ? 'start' : '', start_date ? 'gte' : '', start_date || '')
+        .from('user_subscriptions')
+        .select('*, subscriptions (*), users!inner (*)')
+        .filter(finish_date ? 'finish' : '', finish_date ? 'lte' : '', finish_date || '')
+        .filter(start_date ? 'start' : '', start_date ? 'gte' : '', start_date || '')
 
-if (subInputString) {
-    query = query.in('subscription_id', subInputString.split(','));
-}
-if (status) {
-    query = query.in('status', status.split(','));
-}
-if (telegram_id) {
-    query = query.eq('users.telegram_id', telegram_id); // Remove the unnecessary comma
-}
+    if (subInputString) {
+        query = query.in('subscription_id', subInputString.split(','));
+    }
+    if (status) {
+        query = query.in('status', status.split(','));
+    }
+    if (telegram_id) {
+        query = query.eq('users.telegram_id', telegram_id); // Remove the unnecessary comma
+    }
 
-const userQueryResult = await query;
+    const userQueryResult = await query;
 
     if (userQueryResult.error) {
         console.error('Error fetching user subscriptions:', userQueryResult.error);
@@ -680,51 +706,6 @@ const userQueryResult = await query;
 
     res.json(userQueryResult.data);
 
-});
-
-app.get('/users/subscriptions/:telegram_id', async (req, res) => {
-    // #swagger.tags = ['Users']
-    // #swagger.description = 'Get all subscriptions for User by Telegram ID'
-    const telegram_id = req.params.telegram_id;
-
-
-    const userQueryResult = await supabase
-        .from('users')
-        .select('id')
-        .eq('telegram_id', telegram_id);
-
-    if (userQueryResult.error) {
-        console.error('Error fetching user:', userQueryResult.error);
-        res.status(500).send('Internal Server Error');
-        return;
-    }
-
-
-    if (!userQueryResult.data || userQueryResult.data.length === 0) {
-        res.status(404).send('User Not Found');
-        return;
-    }
-
-    const user_id = userQueryResult.data[0].id;
-
-    const actionsQueryResult = await supabase
-        .from('user_subscriptions')
-        .select(`
-      *, 
-      subscriptions (
-        *
-      )
-    `)
-    .eq('user_id', user_id)
-    
-  
-    if (actionsQueryResult.error) {
-        console.error('Error fetching subscription:', actionsQueryResult.error);
-        res.status(500).send('Internal Server Error');
-        return;
-    }
-
-    res.json(actionsQueryResult.data);
 });
 
 app.get('/users/subscriptions/check/:telegram_id', async (req, res) => {
@@ -754,7 +735,7 @@ app.get('/users/subscriptions/check/:telegram_id', async (req, res) => {
 
     const actionsQueryResult = await supabase
         .from('user_subscriptions')
-            .select("*")
+        .select("*")
         .eq('user_id', user_id)
         .eq('status', 'ACTIVE')
         .gte('finish', new Date().toISOString());
@@ -781,7 +762,7 @@ app.patch('/users/subscriptions/:telegram_id', async (req, res) => {
     const validStatusValues = ['ACTIVE', 'PAUSED', 'CANCELED'];
     const { subscription_id, status } = req.body;
 
-console.log(req.body);
+    console.log(req.body);
     if (!validStatusValues.includes(status)) {
         res.status(400).send('Invalid status value');
         return;
@@ -810,12 +791,12 @@ console.log(req.body);
     const actionsQueryResult = await supabase
         .from('user_subscriptions')
         .upsert(
-            { 
-                user_id: user_id, 
-                subscription_id: subscription_id, 
-                status: status 
+            {
+                user_id: user_id,
+                subscription_id: subscription_id,
+                status: status
             }
-        , { ignoreDuplicates: false, onConflict: 'user_id, subscription_id' })
+            , { ignoreDuplicates: false, onConflict: 'user_id, subscription_id' })
 
     if (actionsQueryResult.error) {
         console.error('Error upserting data:', actionsQueryResult.error);
@@ -999,7 +980,7 @@ app.delete('/goods/:id', async (req, res) => {
 
 app.post('/goods/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Goods']
-    const { telegram_id, goods_id, quantity } = req.body; 
+    const { telegram_id, goods_id, quantity } = req.body;
 
     if (!telegram_id || !goods_id) {
         return res.status(400).send('telegram_id and goods_id are required');
@@ -1009,7 +990,7 @@ app.post('/goods/buy/userbalance', async (req, res) => {
 
     async function buyGoods(telegramId, goodsId, quantity) {
         try {
-            
+
             const { data, error } = await supabase.rpc('buy_product_balance', {
                 p_telegram_id: telegramId,
                 p_product_id: goodsId,
@@ -1113,7 +1094,7 @@ app.post('/trainers', async (req, res) => {
 app.patch('/trainer/:user_id', async (req, res) => {
 
     // #swagger.tags = ['Trainers']
-    const {  first_name, last_name, phone} = req.body;
+    const { first_name, last_name, phone } = req.body;
     const user_id = req.params.user_id;
 
     const { error: updateError } = await supabase
@@ -1153,7 +1134,7 @@ app.delete('/trainers/:user_id', async (req, res) => {
 
     if (deleteError) {
         console.error('Error deleting trainer:', deleteError);
-        
+
         res.status(500).send('Internal Server Error');
         return;
     }
@@ -1276,50 +1257,50 @@ app.delete('/subscriptions/:id', async (req, res) => {
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
     // #swagger.parameters['negative_allowed'] = {in: 'body', description: 'Allow negative balance', type: 'boolean' }
-    const { telegram_id, subscription_id, negative_allowed} = req.body; 
+    const { telegram_id, subscription_id, negative_allowed } = req.body;
 
     if (!telegram_id || !subscription_id) {
         return res.status(400).send('telegram_id and subscription_id are required');
     }
 
     const userData = await supabase
-    .from('users')
-    .select('*')
-    .eq('telegram_id', telegram_id)
-    .single()
+        .from('users')
+        .select('*')
+        .eq('telegram_id', telegram_id)
+        .single()
 
-if (userData.error) {
-    console.error('Error fetching user:', error);
-    res.status(404).send('USER_NOT_FOUND');
-    return;
-}
+    if (userData.error) {
+        console.error('Error fetching user:', error);
+        res.status(404).send('USER_NOT_FOUND');
+        return;
+    }
 
-const user_id = userData.data.id
+    const user_id = userData.data.id
 
     const actionsQueryResult = await supabase
-    .from('user_subscriptions')
-    .select(`
+        .from('user_subscriptions')
+        .select(`
       *, 
       subscriptions (
         *
       )
     `)
-    .eq('user_id', user_id)
-    .gte('finish', new Date().toISOString())
-    .order('finish', {ascending: false})
-    .limit(1)
-  .single()
-  
-   
+        .eq('user_id', user_id)
+        .gte('finish', new Date().toISOString())
+        .order('finish', { ascending: false })
+        .limit(1)
+        .single()
 
-const timestampValue = actionsQueryResult?.data?.finish || new Date().toISOString();
-console.log(typeof timestampValue, timestampValue)
+
+
+    const timestampValue = actionsQueryResult?.data?.finish || new Date().toISOString();
+
 
 
 
     async function buySubscription(user_id, subscriptionId) {
         try {
-           
+
             const { data, error } = await supabase.rpc(negative_allowed ? 'activate_subscription_negative_balance' : 'activate_subscription_positive_balance', {
                 p_start_date: timestampValue,
                 p_user_id: user_id,
@@ -1330,8 +1311,36 @@ console.log(typeof timestampValue, timestampValue)
                 console.error('Ошибка:', error);
                 return null;
             }
+            if (data === "Subscription activated" || data === "Subscription activated negative balance") {
 
-            return data;
+                const { data: subscriptionData } = await supabase
+                    .from('user_subscriptions')
+                    .select('*, subscriptions (*)')
+                    .eq('user_id', user_id)
+                    .eq('subscription_id', subscriptionId)
+                    .limit(1)
+                    .single()
+
+                const { data: balanceData } = await supabase
+                    .from('balance')
+                    .select('*')
+                    .eq('user_id', user_id)
+                    .limit(1)
+                    .single()
+
+
+                return (
+                    {
+                        "status": "SUCCESS",
+                        "subscription": subscriptionData,
+                        "user_id": user_id,
+                        "user": userData.data,
+                        "user_balance": balanceData,
+                        "negative_allowed": negative_allowed
+                    }
+                );
+            };
+
         } catch (err) {
             console.error('Произошла ошибка при вызове функции:', err);
             return null;
@@ -1341,24 +1350,24 @@ console.log(typeof timestampValue, timestampValue)
     buySubscription(user_id, subscription_id).then(response => {
         console.log('Response:', response);
 
-       
 
-             // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
-             if (response === null) {
-                return res.status(500).send('INTERNAL_SERVER_ERROR');
-            }
-    
-            if (response === 'Subscription not found') {
-                return res.status(404).send('SUBSCRIPTION_NOT_FOUND');
-            }
-    
-            if (response === 'User not found') {
-                return res.status(404).send('USER_NOT_FOUND');
-            }
-    
-            if (response === 'Insufficient balance') {
-                return res.status(400).send('INSUFFICIENT_BALANCE');
-            }
+
+        // Если response равен null, значит произошла ошибка, и мы отправляем статус 500
+        if (response === null) {
+            return res.status(500).send('INTERNAL_SERVER_ERROR');
+        }
+
+        if (response === 'Subscription not found') {
+            return res.status(404).send('SUBSCRIPTION_NOT_FOUND');
+        }
+
+        if (response === 'User not found') {
+            return res.status(404).send('USER_NOT_FOUND');
+        }
+
+        if (response === 'Insufficient balance') {
+            return res.status(400).send('INSUFFICIENT_BALANCE');
+        }
 
         // Отправляем ответ обратно клиенту
         res.json(response);
