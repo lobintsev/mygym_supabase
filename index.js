@@ -1282,7 +1282,6 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
         .select("*")
         .eq('user_id', user_id)
         .eq('subscription_id', subscription_id)
-        
         .order('finish', { ascending: false })
         .limit(1)
         .single()
