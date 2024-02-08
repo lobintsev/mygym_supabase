@@ -40,8 +40,8 @@ const speedLimiter = slowDown({
     }
 });
 
-app.use("/buy/subscription/userbalance", limiter, speedLimiter);
-app.use("/buy/subscription/userbalance", limiter, speedLimiter);
+app.use("subscription/buy/userbalance", limiter, speedLimiter);
+app.use("goods/buy/userbalance", limiter, speedLimiter);
 
 
 
