@@ -737,7 +737,7 @@ app.get('/users/subscriptions/check/:telegram_id', async (req, res) => {
         .from('user_subscriptions')
         .select("*")
         .eq('user_id', user_id)
-        .eq('status', 'ACTIVE' || 'EXPIRING'  )
+        .eq('status', 'ACTIVE' || 'EXPIRING' || 'SUSPENDED'  )
 
     const hasSubscriptions = actionsQueryResult.data.length > 0;
 
@@ -756,9 +756,9 @@ app.get('/users/subscriptions/check/:telegram_id', async (req, res) => {
 app.patch('/users/subscriptions/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     // #swagger.description = 'Update subscription. Only status field avaliable for now! Periods and other fields will be added later'
-    // #swagger.parameters['status'] = { in: 'body', description: 'Status', type: 'string', enum: ['ACTIVE', 'PAUSED', 'CANCELED'] }
+    // #swagger.parameters['status'] = { in: 'body', description: 'Status', type: 'string', enum: ['ACTIVE', 'PAUSED', 'CANCELED', 'SUSPENDED'] }
     const telegram_id = req.params.telegram_id;
-    const validStatusValues = ['ACTIVE', 'PAUSED', 'CANCELED'];
+    const validStatusValues = ['ACTIVE', 'PAUSED', 'CANCELED', 'SUSPENDED'];
     const { subscription_id, status } = req.body;
 
     console.log(req.body);
