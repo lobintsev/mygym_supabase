@@ -737,7 +737,7 @@ app.get('/users/subscriptions/check/:telegram_id', async (req, res) => {
         .from('user_subscriptions')
         .select("*")
         .eq('user_id', user_id)
-        .eq('status', 'ACTIVE' || 'EXPIRING' || 'SUSPENDED'  )
+        .in('status', ['ACTIVE', 'EXPIRING', 'SUSPENDED']  )
 
     const hasSubscriptions = actionsQueryResult.data.length > 0;
 
