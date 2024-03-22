@@ -717,7 +717,8 @@ app.get('/users/subscriptions/check/:telegram_id', async (req, res) => {
     const userQueryResult = await supabase
         .from('users')
         .select('id')
-        .eq('telegram_id', telegram_id);
+        .eq('telegram_id', telegram_id)
+        .eq('status', 'ACTIVE')
 
     if (userQueryResult.error) {
         console.error('Error fetching user:', userQueryResult.error);
