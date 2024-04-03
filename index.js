@@ -1506,7 +1506,18 @@ app.post('/webhooks/tinkoff/notifications', async (req, res) => {
     const status = req.body.Status;
     console.log(req.body);
     if (status === 'CONFIRMED') {
+        const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select('status')
+        .eq('number', ordernumber)
+        .single();
+    
+    if (orderError) {
+        console.error('Ошибка при получении данных заказа:', orderError);
+        return;
+    }
 
+    if (orderData.status !== 'COMPLETE') {
         // Обновить запись в таблице orders и получить данные созданного заказа
         const { data: orderResultData, error: orderResultError } = await supabase
             .from('orders')
@@ -1598,6 +1609,7 @@ app.post('/webhooks/tinkoff/notifications', async (req, res) => {
         })();
 
     }
+}
 
     res.status(200).send('OK');
 });
