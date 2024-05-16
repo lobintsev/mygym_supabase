@@ -395,7 +395,7 @@ app.get('/users/balance', async (req, res) => {
 
     let actionsQuery = supabase
         .from('balance')
-        .select('*, users!inner (first_name, last_name, telegram_id)')
+        .select('*, users!inner (*)')
 
 
     if (negative === 'true') {
