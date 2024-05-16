@@ -423,7 +423,7 @@ app.get('/users/balance/:telegram_id', async (req, res) => {
 
     const userQueryResult = await supabase
         .from('users')
-        .select('id')
+        .select('*, users(*)')
         .eq('telegram_id', telegram_id);
 
     if (userQueryResult.error) {
