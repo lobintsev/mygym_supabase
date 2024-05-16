@@ -683,7 +683,8 @@ app.get('/users/subscriptions/', async (req, res) => {
     let query = supabase
         .from('user_subscriptions')
         .select('*, subscriptions (*), users!inner (*)')
-        .filter(finish_date ? 'finish' : '', finish_date ? 'lte' : '', finish_date || '')
+        .filter(finish_date_from ? 'finish' : '', finish_date_from ? 'lte' : '', finish_date_from || '')
+        .filter(finish_date_to ? 'finish' : '', finish_date_to ? 'qte' : '', finish_date_to || '')
         .filter(start_date ? 'start' : '', start_date ? 'gte' : '', start_date || '')
 
     if (subInputString) {
