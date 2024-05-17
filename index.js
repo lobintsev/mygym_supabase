@@ -1372,6 +1372,10 @@ console.log(actionsQueryResult.data);
             return res.status(400).send('INSUFFICIENT_BALANCE');
         }
 
+        if (response === 'User balance is below a threshold') {
+            return res.status(400).send('INSUFFICIENT_BALANCE');
+        }
+
         // Отправляем ответ обратно клиенту
         res.json(response);
     });
