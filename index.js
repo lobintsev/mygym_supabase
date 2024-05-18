@@ -670,21 +670,26 @@ app.get('/users/subscriptions/', async (req, res) => {
     // #swagger.tags = ['Users']
     // #swagger.description = 'Get all subscriptions'
     // #swagger.parameters['subscription_id'] = { description: 'Subscription ID', type: 'array', items: { type: 'integer' } }
-    // #swagger.parameters['from_date'] = { description: 'From date', type: 'timestampz' }
-    // #swagger.parameters['to_date'] = { description: 'To date', type: 'timestampz' }
+    // #swagger.parameters['finish_from'] = { description: 'Finish from time/date', type: 'timestampz' }
+    // #swagger.parameters['finish_to'] = { description: 'Finish to time/date', type: 'timestampz' }
     // #swagger.parameters['status'] = { description: 'Status', type: 'enum', enum: ['ACTIVE', 'PAUSED', 'CANCELED'] }
 
     let subInputString = req.query.subscription_id; // Get the subscription IDs from the query parameters
-    let finish_date = req.query.to_date; // Get the finish date from the query parameters
-    let start_date = req.query.from_date; // Get the start date from the query parameters
+    let finish_from = req.query.finish_from; // Get the finish date from the query parameters
+    let finish_to = req.query.finish_to; // Get the start date from the query parameters
     let status = req.query.status; // Get the status from the query parameters
     let telegram_id = req.query.telegram_id; // Get the telegram_id from the query parameters
 
     let query = supabase
         .from('user_subscriptions')
-        .select('*, subscriptions (*), users!inner (*)')
-        .filter(finish_date? 'finish' : '', finish_date ? 'lte' : '', finish_date || '')
-        .filter(start_date ? 'start' : '', start_date ? 'gte' : '', start_date || '')
+        .select('*, subscriptions (*), users!inner (*)');
+    
+    if (finish_from) {
+        query = query.gte('finish', finish_from);
+    }
+    if (finish_to) {
+        query = query.lte('finish', finish_to);
+    }
 
     if (subInputString) {
         query = query.in('subscription_id', subInputString.split(','));
@@ -1256,8 +1261,7 @@ app.delete('/subscriptions/:id', async (req, res) => {
 
 app.post('/subscriptions/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Subscriptions']
-    // #swagger.parameters['negative_allowed'] = {in: 'body', description: 'Allow negative balance', type: 'boolean' }
-    const { telegram_id, subscription_id, negative_allowed } = req.body;
+    const { telegram_id, subscription_id } = req.body;
 
     if (!telegram_id || !subscription_id) {
         return res.status(400).send('telegram_id and subscription_id are required');
@@ -1265,7 +1269,7 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
 
     const userData = await supabase
         .from('users')
-        .select('*')
+        .select('*, balance (*)')
         .eq('telegram_id', telegram_id)
         .single()
 
@@ -1276,6 +1280,7 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
     }
 
     const user_id = userData.data.id
+    const user_balance = userData.data.balance.amount
 
     const actionsQueryResult = await supabase
         .from('user_subscriptions')
@@ -1284,19 +1289,40 @@ app.post('/subscriptions/buy/userbalance', async (req, res) => {
         .eq('subscription_id', subscription_id)
         .order('finish', { ascending: false })
         .limit(1)
-        .single()
+       
 
 if (actionsQueryResult.error) {
         console.error('Error fetching user subscriptions:', actionsQueryResult.error);
        
     }
-console.log(actionsQueryResult.data);
-    if (actionsQueryResult?.data?.subscription_id === subscription_id && actionsQueryResult?.data?.status === 'ACTIVE') {
+
+
+    if (actionsQueryResult?.data?.[0]?.subscription_id === subscription_id && actionsQueryResult?.data?.[0]?.status === 'ACTIVE') {
         res.status(400).send('ALREADY_HAVE_ACTIVE_SUBSCRIPTION');
         return;
     }
 
     const timestampValue =  new Date().toISOString();
+
+    const subscriptionData = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('id', subscription_id)
+        .single()
+
+    if (subscriptionData.error) {
+        console.error('Error fetching subscription:', subscriptionData.error);
+        res.status(404).send('SUBSCRIPTION_NOT_FOUND');
+        return;
+    }
+
+    const subscription_price = subscriptionData.data.price
+
+    if (user_balance < subscription_price) {
+        res.status(400).send('INSUFFICIENT_BALANCE');
+        console.log('INSUFFICIENT_BALANCE BEFORE SQL DUNCTION');
+        return;
+    }
 
 
 
@@ -1304,7 +1330,7 @@ console.log(actionsQueryResult.data);
     async function buySubscription(user_id, subscriptionId) {
         try {
 
-            const { data, error } = await supabase.rpc(negative_allowed ? 'activate_subscription_negative_balance' : 'activate_subscription_positive_balance', {
+            const { data, error } = await supabase.rpc('activate_subscription_negative_balance', {
                 p_start_date: timestampValue,
                 p_user_id: user_id,
                 p_subscription_id: subscriptionId,
@@ -1314,6 +1340,8 @@ console.log(actionsQueryResult.data);
                 console.error('Ошибка:', error);
                 return null;
             }
+
+            console.log(data);
             if (data === "Subscription activated" || data === "Subscription activated negative balance") {
 
                 const { data: subscriptionData } = await supabase
@@ -1343,6 +1371,9 @@ console.log(actionsQueryResult.data);
                     }
                 );
             };
+
+            return data;
+            
 
         } catch (err) {
             console.error('Произошла ошибка при вызове функции:', err);
