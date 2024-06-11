@@ -985,7 +985,7 @@ app.delete('/goods/:id', async (req, res) => {
 
 app.post('/goods/buy/userbalance', async (req, res) => {
     // #swagger.tags = ['Goods']
-    const { telegram_id, goods_id, quantity } = req.body;
+    const { telegram_id, goods_id, quantity, uuid } = req.body;
 
     if (!telegram_id || !goods_id) {
         return res.status(400).send('telegram_id and goods_id are required');
@@ -993,7 +993,7 @@ app.post('/goods/buy/userbalance', async (req, res) => {
 
 
 
-    async function buyGoods(telegramId, goodsId, quantity) {
+    async function buyGoods(telegramId, goodsId, quantity, uuid) {
         try {
 
             const { data, error } = await supabase.rpc('buy_product_balance', {
@@ -1366,8 +1366,7 @@ if (actionsQueryResult.error) {
                         "subscription": subscriptionData,
                         "user_id": user_id,
                         "user": userData.data,
-                        "user_balance": balanceData,
-                        "negative_allowed": negative_allowed
+                        "user_balance": balanceData
                     }
                 );
             };
