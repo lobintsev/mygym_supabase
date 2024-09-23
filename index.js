@@ -1,5 +1,6 @@
 const express = require('express');
 require('dotenv').config();
+const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const toggleDevice = require('./toggleDevice');
 const listDevices = require('./src/helpers/alice/listDevices');
@@ -16,7 +17,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
-
+app.use(cors());
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
