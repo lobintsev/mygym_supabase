@@ -1642,6 +1642,26 @@ app.get('/calendar/actions', async (req, res) => {
     res.json(data);
 });
 
+
+app.get('/calendar/actions/:day', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+	const day = req.params.day;
+     const { data: data, error } = await supabase
+        .from('calendar_actions')
+        .select(`
+		id, day, start, event_id,
+		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).eq("day", day);
+
+    if (error) {
+        console.error('Error fetching events:', error);
+        res.status(500).send('Internal Server Error: '+error);
+        return;
+    }
+
+    res.json(data);
+});
+
+
 app.post('/calendar/actions', async (req, res) => {
     // #swagger.tags = ['Calendar']
 
