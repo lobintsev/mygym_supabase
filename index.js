@@ -1558,19 +1558,19 @@ app.get('/calendar/events', async (req, res) => {
 app.post('/calendar/events', async (req, res) => {
     // #swagger.tags = ['Calendar']
 
-    const { name, shortdes, description, image, duration, capacity } = req.body;
+    const { name, shortdes, description, imageurl, duration, capacity } = req.body;
 
-    if (!name || !shortdes || !description || !image || !duration || !capacity) {
+    if (!name || !shortdes || !description || !imageurl || !duration || !capacity) {
         res.status(400).send('Bad Request: Missing required fields');
         return;
     }
 
     const { error: insertError } = await supabase
         .from('calendar_events')
-        .insert([{ name, shortdes, description, image, duration, capacity }]);
+        .insert([{ name, shortdes, description, imageurl, duration, capacity }]);
     if (insertError) {
         console.error('Error creating events:', insertError);
-        res.status(500).send('Internal Server Error');
+        res.status(500).send('Internal Server Error: '+insertError);
         return;
     }
 
