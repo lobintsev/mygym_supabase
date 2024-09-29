@@ -18,6 +18,10 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
 app.use(cors());
+
+//process.env.SUPABASE_URL = "https://akhdzgwtzroydiqlepey.supabase.co";
+//process.env.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraGR6Z3d0enJveWRpcWxlcGV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTUzMTA5MzQsImV4cCI6MjAxMDg4NjkzNH0.BWtFS5A4hI5oRVKM695pwnvMHCoVGRDRznvnj9fZqWg";
+
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
@@ -1531,6 +1535,48 @@ app.post('/payment/tinkoff/init', async (req, res) => {
 
     // Отправляем данные созданного заказа в ответе
     res.json(paymentInitResult);
+});
+
+//CALENDAR
+
+app.get('/calendar/events', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+
+     const { data: data, error } = await supabase
+        .from('calendar_events')
+        .select('*');
+
+    if (error) {
+        console.error('Error fetching events:', error);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    res.json(data);
+});
+
+app.post('/calendar/events', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+
+    const { name, shortdes, description, image, duration, capacity } = req.body;
+
+    if (!name || !shortdes || !description || !image || !duration || !capacity) {
+        res.status(400).send('Bad Request: Missing required fields');
+        return;
+    }
+
+    const { error: insertError } = await supabase
+        .from('calendar_events')
+        .insert([{ name, shortdes, description, image, duration, capacity }]);
+    if (insertError) {
+        console.error('Error creating events:', insertError);
+        res.status(500).send('Internal Server Error');
+        return;
+    }
+
+    
+
+    res.status(201).send('Successful insert event. Nyohoho!');
 });
 
 //WEBHOOKS
