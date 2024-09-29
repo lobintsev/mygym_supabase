@@ -1605,7 +1605,23 @@ app.patch('/calendar/events/:event_id', async (req, res) => {
     res.status(201).send('Successful update event. Nyohoho!');
 });
 
+app.delete('/calendar/events/:event_id', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+	const event_id = req.params.event_id;
 
+    const { error: insertError } = await supabase
+        .from('calendar_events')
+        .delete().eq("id", event_id);
+    if (insertError) {
+        console.error('Error updating events:', insertError);
+        res.status(500).send('Internal Server Error: '+insertError);
+        return;
+    }
+
+    
+
+    res.status(201).send('Successful delete event. Nyohoho!');
+});
 
 //WEBHOOKS
 
