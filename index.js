@@ -1720,6 +1720,23 @@ app.get('/calendar/records/:action_id', async (req, res) => {
     res.json(data);
 });
 
+app.get('/calendar/records/:user_id', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+	const user_id = req.params.user_id;
+     const { data: data, error } = await supabase
+        .from('calendar_records')
+        .select(`created_at, action_id`).eq("user_id", user_id);
+
+    if (error) {
+        console.error('Error fetching records:', error);
+        res.status(500).send('Internal Server Error: '+error);
+        return;
+    }
+
+    res.json(data);
+});
+
+
 app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
       // #swagger.tags = ['Calendar']
 	  
