@@ -1686,6 +1686,25 @@ app.post('/calendar/actions', async (req, res) => {
     res.status(201).send('Successful insert action. Nyohoho!');
 });
 
+app.delete('/calendar/actions/:action_id', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+	const action_id = req.params.action_id;
+
+    const { error: insertError } = await supabase
+        .from('calendar_actions')
+        .delete().eq("id", action_id);
+    if (insertError) {
+        console.error('Error updating events:', insertError);
+        res.status(500).send('Internal Server Error: '+insertError);
+        return;
+    }
+
+    
+
+    res.status(201).send('Successful delete action. Nyohoho!');
+});
+
+
 //WEBHOOKS
 
 app.post('/webhooks/tinkoff/notifications', async (req, res) => {
