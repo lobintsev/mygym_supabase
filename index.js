@@ -1537,6 +1537,7 @@ app.post('/payment/tinkoff/init', async (req, res) => {
     res.json(paymentInitResult);
 });
 
+
 //CALENDAR
 
 app.get('/calendar/events', async (req, res) => {
@@ -1578,6 +1579,33 @@ app.post('/calendar/events', async (req, res) => {
 
     res.status(201).send('Successful insert event. Nyohoho!');
 });
+
+
+app.patch('/calendar/events/:event_id', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+	const event_id = req.params.event_id;
+    const { name, shortdes, description, imageurl, duration, capacity } = req.body;
+
+    if (!name || !shortdes || !description || !imageurl || !duration || !capacity) {
+        res.status(400).send('Bad Request: Missing required fields');
+        return;
+    }
+
+    const { error: insertError } = await supabase
+        .from('calendar_events')
+        .update([{ name, shortdes, description, imageurl, duration, capacity }]).eq("id", event_id);
+    if (insertError) {
+        console.error('Error updating events:', insertError);
+        res.status(500).send('Internal Server Error: '+insertError);
+        return;
+    }
+
+    
+
+    res.status(201).send('Successful update event. Nyohoho!');
+});
+
+
 
 //WEBHOOKS
 
