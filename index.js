@@ -1613,7 +1613,7 @@ app.delete('/calendar/events/:event_id', async (req, res) => {
         .from('calendar_events')
         .delete().eq("id", event_id);
     if (insertError) {
-        console.error('Error updating events:', insertError);
+        console.error('Error deleting events:', insertError);
         res.status(500).send('Internal Server Error: '+insertError);
         return;
     }
@@ -1634,7 +1634,7 @@ app.get('/calendar/actions', async (req, res) => {
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`);
 
     if (error) {
-        console.error('Error fetching events:', error);
+        console.error('Error fetching actions:', error);
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
@@ -1653,7 +1653,7 @@ app.get('/calendar/actions/:day', async (req, res) => {
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).eq("day", day);
 
     if (error) {
-        console.error('Error fetching events:', error);
+        console.error('Error fetching actions:', error);
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
@@ -1676,7 +1676,7 @@ app.post('/calendar/actions', async (req, res) => {
         .from('calendar_actions')
         .insert([{ day, start, event_id}]);
     if (insertError) {
-        console.error('Error creating events:', insertError);
+        console.error('Error creating actions:', insertError);
         res.status(500).send('Internal Server Error: '+insertError);
         return;
     }
@@ -1694,7 +1694,7 @@ app.delete('/calendar/actions/:action_id', async (req, res) => {
         .from('calendar_actions')
         .delete().eq("id", action_id);
     if (insertError) {
-        console.error('Error updating events:', insertError);
+        console.error('Error deleting actions:', insertError);
         res.status(500).send('Internal Server Error: '+insertError);
         return;
     }
@@ -1702,6 +1702,60 @@ app.delete('/calendar/actions/:action_id', async (req, res) => {
     
 
     res.status(201).send('Successful delete action. Nyohoho!');
+});
+
+app.get('/calendar/records/:action_id', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+	const action_id = req.params.action_id;
+     const { data: data, error } = await supabase
+        .from('calendar_records')
+        .select(`created_at, user_id, user(first_name, last_name, telegram_nickname, phone)`).eq("action_id", action_id);
+
+    if (error) {
+        console.error('Error fetching records:', error);
+        res.status(500).send('Internal Server Error: '+error);
+        return;
+    }
+
+    res.json(data);
+});
+
+app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
+      // #swagger.tags = ['Calendar']
+	  
+	const action_id = req.params.action_id;
+	const user_id = req.params.user_id;
+	
+    const { error: insertError } = await supabase
+        .from('calendar_records')
+        .insert([{ action_id, user_id}]);
+    if (insertError) {
+        console.error('Error creating records:', insertError);
+        res.status(500).send('Internal Server Error: '+insertError);
+        return;
+    }
+
+    
+
+    res.status(201).send('Successful insert record. Nyohoho!');
+});
+
+
+app.delete('/calendar/records/:action_id/:user_id', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+	const action_id = req.params.action_id;
+	const user_id = req.params.user_id;
+	
+    const { error: insertError } = await supabase
+        .from('calendar_records')
+        .delete().eq("action_id", action_id).eq("user_id", user_id);
+    if (insertError) {
+        console.error('Error deleting records:', insertError);
+        res.status(500).send('Internal Server Error: '+insertError);
+        return;
+    }
+
+    res.status(201).send('Successful delete record. Nyohoho!');
 });
 
 
