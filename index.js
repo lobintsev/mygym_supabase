@@ -1631,7 +1631,7 @@ app.get('/calendar/actions', async (req, res) => {
         .from('calendar_actions')
         .select(`
 		id, day, start, event_id,
-		calendar_events(name, shortdes, description, imageurl, duration, capacity)`);
+		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('start', { ascending: false });
 
     if (error) {
         console.error('Error fetching actions:', error);
@@ -1650,7 +1650,7 @@ app.get('/calendar/actions/:day', async (req, res) => {
         .from('calendar_actions')
         .select(`
 		id, day, start, event_id,
-		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).eq("day", day);
+		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).eq("day", day).order('start', { ascending: false });
 
     if (error) {
         console.error('Error fetching actions:', error);
