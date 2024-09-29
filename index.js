@@ -1623,6 +1623,25 @@ app.delete('/calendar/events/:event_id', async (req, res) => {
     res.status(201).send('Successful delete event. Nyohoho!');
 });
 
+
+app.get('/calendar/actions', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+
+     const { data: data, error } = await supabase
+        .from('calendar_events')
+        .select(`
+		*,
+		calendar_actions(*)`);
+
+    if (error) {
+        console.error('Error fetching events:', error);
+        res.status(500).send('Internal Server Error: '+error);
+        return;
+    }
+
+    res.json(data);
+});
+
 //WEBHOOKS
 
 app.post('/webhooks/tinkoff/notifications', async (req, res) => {
