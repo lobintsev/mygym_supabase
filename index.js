@@ -1628,10 +1628,10 @@ app.get('/calendar/actions', async (req, res) => {
     // #swagger.tags = ['Calendar']
 
      const { data: data, error } = await supabase
-        .from('calendar_events')
+        .from('calendar_actions')
         .select(`
-		*,
-		calendar_actions(*)`);
+		id, day, start, event_id,
+		calendar_events(name, shortdes, description, imageurl, duration, capacity)`);
 
     if (error) {
         console.error('Error fetching events:', error);
