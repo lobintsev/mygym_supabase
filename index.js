@@ -1642,6 +1642,30 @@ app.get('/calendar/actions', async (req, res) => {
     res.json(data);
 });
 
+app.post('/calendar/actions', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+
+    const { day, start, event_id } = req.body;
+
+    if (!day || !start || !event_id) {
+        res.status(400).send('Bad Request: Missing required fields');
+        return;
+    }
+
+    const { error: insertError } = await supabase
+        .from('calendar_actions')
+        .insert([{ day, start, event_id}]);
+    if (insertError) {
+        console.error('Error creating events:', insertError);
+        res.status(500).send('Internal Server Error: '+insertError);
+        return;
+    }
+
+    
+
+    res.status(201).send('Successful insert action. Nyohoho!');
+});
+
 //WEBHOOKS
 
 app.post('/webhooks/tinkoff/notifications', async (req, res) => {
