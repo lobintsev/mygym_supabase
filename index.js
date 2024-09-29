@@ -1709,7 +1709,7 @@ app.get('/calendar/records/:action_id', async (req, res) => {
 	const action_id = req.params.action_id;
      const { data: data, error } = await supabase
         .from('calendar_records')
-        .select(`created_at, user_id, user(first_name, last_name, telegram_nickname, phone)`).eq("action_id", action_id);
+        .select(`created_at, user_id, users(first_name, last_name, telegram_nickname, phone)`).eq("action_id", action_id);
 
     if (error) {
         console.error('Error fetching records:', error);
