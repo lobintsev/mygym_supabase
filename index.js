@@ -1639,16 +1639,6 @@ app.get('/calendar/actions', async (req, res) => {
         return;
     }
 	
-	const { data: data2, error2 } = await supabase
-        .from('calendar_records')
-        .select(`*`, { count: 'exact', head: true }).eq(''));
-	
-	 if (error2) {
-        console.error('Error fetching actions:', error2);
-        res.status(500).send('Internal Server Error: '+error2);
-        return;
-    }
-	
 	
     res.json(data);
 });
