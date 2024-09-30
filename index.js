@@ -1730,7 +1730,7 @@ app.get('/calendar/records/:user_id', async (req, res) => {
 
     if (error) {
         console.error('Error fetching records:', error);
-        res.status(500).send('Internal Server Error: '+error);
+        res.status(500).send('Internal Server Error: ',error);
         return;
     }
 
