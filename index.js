@@ -1660,7 +1660,7 @@ app.get('/calendar/actions/:day', async (req, res) => {
      const { data: data, error } = await supabase
         .from('calendar_actions')
         .select(`
-		id, day, start, event_id,
+		id, day, start, event_id, quantity,
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).eq("day", day).order('start', { ascending: false });
 
     if (error) {
