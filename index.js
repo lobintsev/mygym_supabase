@@ -1630,15 +1630,26 @@ app.get('/calendar/actions', async (req, res) => {
      const { data: data, error } = await supabase
         .from('calendar_actions')
         .select(`
-		id, day, start, event_id,
+		id, day, start, event_id, quantity,
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('start', { ascending: false });
-
+	
     if (error) {
         console.error('Error fetching actions:', error);
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
-
+	
+	const { data: data2, error2 } = await supabase
+        .from('calendar_records')
+        .select(`*`, { count: 'exact', head: true }).eq(''));
+	
+	 if (error2) {
+        console.error('Error fetching actions:', error2);
+        res.status(500).send('Internal Server Error: '+error2);
+        return;
+    }
+	
+	
     res.json(data);
 });
 
@@ -1725,7 +1736,7 @@ app.get('/calendar/records/action/:user_id', async (req, res) => {
 	const user_id = req.params.user_id;
      const { data: data, error } = await supabase
         .from('calendar_records')
-        .select(`created_at, action_id, calendar_actions(day, start)`).eq("user_id", user_id);
+        .select(`created_at, action_id, calendar_actions(day, start, quantity)`).eq("user_id", user_id);
 
 
     if (error) {
