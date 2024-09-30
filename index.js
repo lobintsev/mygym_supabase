@@ -1720,7 +1720,7 @@ app.get('/calendar/records/:action_id', async (req, res) => {
     res.json(data);
 });
 
-app.get('/calendar/records/:user_id', async (req, res) => {
+app.get('/calendar/records/action/:user_id', async (req, res) => {
     // #swagger.tags = ['Calendar']
 	const user_id = req.params.user_id;
      const { data: data, error } = await supabase
