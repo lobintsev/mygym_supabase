@@ -1631,7 +1631,7 @@ app.get('/calendar/actions', async (req, res) => {
         .from('calendar_actions')
         .select(`
 		id, day, start, event_id, quantity,
-		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('start', { ascending: true });
+		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('day', { ascending: true }).order('start', { ascending: true });
 	
     if (error) {
         console.error('Error fetching actions:', error);
