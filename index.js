@@ -16,13 +16,9 @@ const slowDown = require("express-slow-down");
 const app = express();
 const port = process.env.PORT || 3000;
 app.use(express.json());
-app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile))
-let corsOptions = {
-   origin : ['https://gym-cal.vercel.app'],
-}
-
-app.use(cors(corsOptions))
-
+app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile));
+app.use(cors());
+app.options("*", cors());
 //process.env.SUPABASE_URL = "https://akhdzgwtzroydiqlepey.supabase.co";
 //process.env.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraGR6Z3d0enJveWRpcWxlcGV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTUzMTA5MzQsImV4cCI6MjAxMDg4NjkzNH0.BWtFS5A4hI5oRVKM695pwnvMHCoVGRDRznvnj9fZqWg";
 
