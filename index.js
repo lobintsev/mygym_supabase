@@ -1563,7 +1563,7 @@ app.post('/calendar/events', async (req, res) => {
     const { name, shortdes, description, imageurl, duration, capacity } = req.body;
 
     if (!name || !shortdes || !description || !imageurl || !duration || !capacity) {
-        res.status(400).send('Bad Request: Missing required fields');
+        res.status(400).send('Bad Request: Missing required fields: name: '+name+', shortdes: '+shortdes+', description: '+description+', imageurl: '+imageurl+', duration: '+duration+', capacity: '+capacity);
         return;
     }
 
