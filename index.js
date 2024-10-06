@@ -1645,12 +1645,16 @@ app.get('/calendar/actions', async (req, res) => {
 		thet = Date.parse(data[index].day);
 		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-now.getTime())/m<=14){
 			
-			let thet2 = new Date(thet.getYear(), thet.getMonth(), thet.getDate());
-			thet2.setDate(thet.getDate()+7);
-			let day = thet2.getYear()+"-"+thet2.getMonth()+"-"+thet2.getDate();
+			thet.setDate(thet.getDate()+7);
+			let day = thet.getYear()+"-"+thet.getMonth()+"-"+thet.getDate();
 			let start = data[index].start;
 			let event_id = data[index].event_id;
 			let periodic = data[index].periodic;
+			
+			res.status(500).send('TEST: '+thet);
+			return;
+			
+			
 			const { error: insertError } = await supabase
 			.from('calendar_actions')
 			.insert([{ day, start, event_id, periodic }]);
@@ -1663,7 +1667,7 @@ app.get('/calendar/actions', async (req, res) => {
 			
 			const { error: insertError2 } = await supabase
 			.from('calendar_actions')
-			.update([{ dubbed: "TRUE" }]).eq("id", data[index].id);
+			.update([{ dubbed: true }]).eq("id", data[index].id);
 			
 			if (insertError2) {
 				console.error('Error fetching actions:', insertError2);
