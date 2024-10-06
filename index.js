@@ -1643,25 +1643,22 @@ app.patch('/calendar/periodic', async (req, res) => {
 
 
 
-    const now = new Date();
+    const now = await new Date();
 	const m = (1000*60*60*24);
 
-	for  (index=0;index<data.length;index++){
-		thet = await Date.parse(data[index].day);
+	for  (const item of data){
+        let thet = await Date.parse(item.day);
 
-		if(data[index].periodic && !data[index].dubbed && (await thet.getTime()- await now.getTime())/m<=14){
+		if(item.periodic && !item.dubbed && (await thet.getTime()- await now.getTime())/m<=14){
 		
 			 await thet.setDate(await thet.getDate()+7);
-			 day = await thet.getYear()+"-"+await thet.getMonth()+"-"+await thet.getDate();
-			 start = data[index].start;
-			 event_id = data[index].event_id;
-			 periodic = data[index].periodic;
+             const day = await thet.getYear()+"-"+await thet.getMonth()+"-"+await thet.getDate();
+			 const start = item.start;
+             const event_id = item.event_id;
 
-
-			
 			const { error: insertError } = await supabase
 			.from('calendar_actions')
-			.insert([{ day, start, event_id, periodic }]);
+			.insert({ day: day, start: start, event_id: event_id, periodic: true });
 			
 			  if (insertError) {
 				console.error('Error fetching actions:', insertError);
@@ -1671,7 +1668,7 @@ app.patch('/calendar/periodic', async (req, res) => {
 			
 			const { error: insertError2 } = await supabase
 			.from('calendar_actions')
-			.update({ dubbed: true }).eq("id", data[index].id);
+			.update({ dubbed: true }).eq("id", item.id);
 			
 			if (insertError2) {
 				console.error('Error fetching actions:', insertError2);
