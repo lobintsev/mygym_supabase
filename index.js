@@ -1646,7 +1646,7 @@ app.patch('/calendar/periodic', async (req, res) => {
     const now = await new Date();
 	const m = (1000*60*60*24);
 
-	for  (const item of data){
+	for await (const item of data){
         let thet = await Date.parse(item.day);
 
 		if(item.periodic && !item.dubbed && (await thet.getTime()- await now.getTime())/m<=14){
