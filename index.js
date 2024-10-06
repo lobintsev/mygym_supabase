@@ -1639,7 +1639,7 @@ app.get('/calendar/actions', async (req, res) => {
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
-	let not = new Date();
+	/*let not = new Date();
 	let m = (1000*60*60*24);
 	for (let index=0;index<data.length;index++){
 		thet = Date.parse(data[index].day);
@@ -1678,7 +1678,7 @@ app.get('/calendar/actions', async (req, res) => {
 				return;
 			  }
 		}
-	}
+	}*/
 	
 	
 	
