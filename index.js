@@ -1625,6 +1625,69 @@ app.delete('/calendar/events/:event_id', async (req, res) => {
 });
 
 
+app.patch('/calendar/periodic', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+
+	const { data: data, error } = await supabase
+        .from('calendar_actions')
+        .select(`
+		id, day, start, event_id, quantity, periodic, dubbed,
+		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('day', { ascending: true }).order('start', { ascending: true });
+	
+    if (error) {
+        console.error('Error fetching actions:', error);
+        res.status(500).send('Internal Server Error: '+error);
+        return;
+    }
+
+
+    let not = new Date();
+	let m = (1000*60*60*24);
+	for (let index=0;index<data.length;index++){
+		thet = Date.parse(data[index].day);
+		
+		
+		res.status(500).send('Internal Server Error insert: '+(thet.getTime()-not.getTime()));
+				return;
+		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-not.getTime())/m<=14){
+		
+			thet.setDate(thet.getDate()+7);
+			let day = thet.getYear()+"-"+thet.getMonth()+"-"+thet.getDate();
+			let start = data[index].start;
+			let event_id = data[index].event_id;
+			let periodic = data[index].periodic;
+			
+			
+			
+			
+			const { error: insertError } = await supabase
+			.from('calendar_actions')
+			.insert([{ day, start, event_id, periodic }]);
+			
+			  if (insertError) {
+				console.error('Error fetching actions:', insertError);
+				res.status(500).send('Internal Server Error insert: '+insertError);
+				return;
+			  }
+			
+			const { error: insertError2 } = await supabase
+			.from('calendar_actions')
+			.update([{ dubbed: true }]).eq("id", data[index].id);
+			
+			if (insertError2) {
+				console.error('Error fetching actions:', insertError2);
+				res.status(500).send('Internal Server Error update: '+insertError2);
+				return;
+			  }
+		}
+	}
+
+    
+
+    res.status(200).send('Successful patch periodic. Nyohoho!');
+});
+
+
 app.get('/calendar/actions', async (req, res) => {
     // #swagger.tags = ['Calendar']
 
