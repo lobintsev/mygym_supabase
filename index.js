@@ -1654,7 +1654,7 @@ app.patch('/calendar/periodic', async (req, res) => {
 
              let thet2 = await new Date(thet);
 			 await thet2.setDate(await thet.getDate()+7);
-             const day = await thet2.getFullYear()+"-"+await (thet2.getMonth()+1)+"-"+await 2.getDate();
+             const day = await thet2.getFullYear()+"-"+(await thet2.getMonth()+1)+"-"+await thet2.getDate();
 			 const start = item.start;
              const event_id = item.event_id;
 
