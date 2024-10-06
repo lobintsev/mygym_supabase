@@ -1631,7 +1631,7 @@ app.get('/calendar/actions', async (req, res) => {
      const { data: data, error } = await supabase
         .from('calendar_actions')
         .select(`
-		id, day, start, event_id, quantity,
+		id, day, start, event_id, quantity, periodic,
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('day', { ascending: true }).order('start', { ascending: true });
 	
     if (error) {
@@ -1651,7 +1651,7 @@ app.get('/calendar/actions/:day', async (req, res) => {
      const { data: data, error } = await supabase
         .from('calendar_actions')
         .select(`
-		id, day, start, event_id, quantity,
+		id, day, start, event_id, quantity, periodic,
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).eq("day", day).order('start', { ascending: true });
 
     if (error) {
@@ -1687,6 +1687,34 @@ app.post('/calendar/actions', async (req, res) => {
 
     res.status(201).send('Successful insert action. Nyohoho!');
 });
+
+
+
+app.post('/calendar/actions/periodic/:action_id/:value', async (req, res) => {
+    // #swagger.tags = ['Calendar']
+
+	const action_id = req.params.action_id;
+    const value = req.params.value;
+	
+    if (!action_id || !value) {
+        res.status(400).send('Bad Request: Missing required fields');
+        return;
+    }
+
+    const { error: insertError } = await supabase
+        .from('calendar_actions')
+        .update([{periodic:value}]).eq("id", action_id);
+    if (insertError) {
+        console.error('Error updating actions:', insertError);
+        res.status(500).send('Internal Server Error: '+insertError);
+        return;
+    }
+
+    
+
+    res.status(201).send('Successful update periodic. Nyohoho!');
+});
+
 
 app.delete('/calendar/actions/:action_id', async (req, res) => {
     // #swagger.tags = ['Calendar']
