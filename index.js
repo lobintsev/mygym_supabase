@@ -1634,29 +1634,30 @@ app.patch('/calendar/periodic', async (req, res) => {
 		id, day, start, event_id, quantity, periodic, dubbed,
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('day', { ascending: true }).order('start', { ascending: true });
 	
-    if (true) {
+    if (error) {
         console.error('Error fetching actions:', error);
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
 
 
-    let not = new Date();
-	let m = (1000*60*60*24);
-	for (let index=0;index<data.length;index++){
-		thet = Date.parse(data[index].day);
+
+
+    const now = new Date();
+	const m = (1000*60*60*24);
+
+	for  (index=0;index<data.length;index++){
+		thet = await Date.parse(data[index].day);
+
+		if(data[index].periodic && !data[index].dubbed && (await thet.getTime()- await now.getTime())/m<=14){
 		
-		
-		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-not.getTime())/m<=14){
-		
-			thet.setDate(thet.getDate()+7);
-			let day = thet.getYear()+"-"+thet.getMonth()+"-"+thet.getDate();
-			let start = data[index].start;
-			let event_id = data[index].event_id;
-			let periodic = data[index].periodic;
-			
-			
-			
+			 await thet.setDate(await thet.getDate()+7);
+			 day = await thet.getYear()+"-"+await thet.getMonth()+"-"+await thet.getDate();
+			 start = data[index].start;
+			 event_id = data[index].event_id;
+			 periodic = data[index].periodic;
+
+
 			
 			const { error: insertError } = await supabase
 			.from('calendar_actions')
@@ -1685,6 +1686,11 @@ app.patch('/calendar/periodic', async (req, res) => {
     res.status(200).send('Successful patch periodic. Nyohoho!');
 });
 
+function periodic_check(data){
+
+
+
+}
 
 app.get('/calendar/actions', async (req, res) => {
     // #swagger.tags = ['Calendar']
