@@ -1644,13 +1644,13 @@ app.patch('/calendar/periodic', async (req, res) => {
 
 
     const now = await new Date();
-	const m = (1000*60*60*24);
+	const m = 86400000;
 
 	for await (const item of data){
-        let thet = await Date.parse(item.day);
+        let thet = await new Date(item.day);
 
 		if(item.periodic && !item.dubbed && (await thet.getTime()- await now.getTime())/m<=14){
-		
+
 			 await thet.setDate(await thet.getDate()+7);
              const day = await thet.getYear()+"-"+await thet.getMonth()+"-"+await thet.getDate();
 			 const start = item.start;
@@ -1659,17 +1659,17 @@ app.patch('/calendar/periodic', async (req, res) => {
 			const { error: insertError } = await supabase
 			.from('calendar_actions')
 			.insert({ day: day, start: start, event_id: event_id, periodic: true });
-			
+
 			  if (insertError) {
 				console.error('Error fetching actions:', insertError);
 				res.status(500).send('Internal Server Error insert: '+insertError);
 				return;
 			  }
-			
+
 			const { error: insertError2 } = await supabase
 			.from('calendar_actions')
 			.update({ dubbed: true }).eq("id", item.id);
-			
+
 			if (insertError2) {
 				console.error('Error fetching actions:', insertError2);
 				res.status(500).send('Internal Server Error update: '+insertError2);
