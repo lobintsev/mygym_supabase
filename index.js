@@ -1639,13 +1639,16 @@ app.get('/calendar/actions', async (req, res) => {
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
-	let now = new Date();
+	let not = new Date();
 	let m = (1000*60*60*24);
 	for (let index=0;index<data.length;index++){
 		thet = Date.parse(data[index].day);
-		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-now.getTime())/m<=14){
-			res.status(500).send('TEST: '+index);
-			return;
+		
+		
+		res.status(500).send('Internal Server Error insert: '+(thet.getTime()-not.getTime()));
+				return;
+		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-not.getTime())/m<=14){
+		
 			thet.setDate(thet.getDate()+7);
 			let day = thet.getYear()+"-"+thet.getMonth()+"-"+thet.getDate();
 			let start = data[index].start;
