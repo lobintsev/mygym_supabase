@@ -1671,7 +1671,7 @@ app.patch('/calendar/periodic', async (req, res) => {
 			
 			const { error: insertError2 } = await supabase
 			.from('calendar_actions')
-			.update([{ dubbed: true }]).eq("id", data[index].id);
+			.update({ dubbed: true }).eq("id", data[index].id);
 			
 			if (insertError2) {
 				console.error('Error fetching actions:', insertError2);
@@ -1686,11 +1686,7 @@ app.patch('/calendar/periodic', async (req, res) => {
     res.status(200).send('Successful patch periodic. Nyohoho!');
 });
 
-function periodic_check(data){
 
-
-
-}
 
 app.get('/calendar/actions', async (req, res) => {
     // #swagger.tags = ['Calendar']
@@ -1816,7 +1812,7 @@ app.post('/calendar/actions/periodic/:action_id/:value', async (req, res) => {
 
     const { error: insertError } = await supabase
         .from('calendar_actions')
-        .update([{periodic:value}]).eq("id", action_id);
+        .update({periodic:value}).eq("id", action_id);
     if (insertError) {
         console.error('Error updating actions:', insertError);
         res.status(500).send('Internal Server Error: '+insertError);
