@@ -1643,7 +1643,7 @@ app.get('/calendar/actions', async (req, res) => {
 	let m = (1000*60*60*24);
 	for (let index=0;index<data.length;index++){
 		thet = Date.parse(data[index].day);
-		if(data[index].periodic=="TRUE" && !data[index].dubbed && (thet.getTime()-now.getTime())/m<=14){
+		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-now.getTime())/m<=14){
 			
 			let thet2 = new Date(thet.getYear(), thet.getMonth(), thet.getDate());
 			thet2.setDate(thet.getDate()+7);
