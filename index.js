@@ -1631,7 +1631,7 @@ app.get('/calendar/actions', async (req, res) => {
      const { data: data, error } = await supabase
         .from('calendar_actions')
         .select(`
-		id, day, start, event_id, quantity, periodic,
+		id, day, start, event_id, quantity, periodic, dubbed,
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('day', { ascending: true }).order('start', { ascending: true });
 	
     if (error) {
@@ -1639,6 +1639,41 @@ app.get('/calendar/actions', async (req, res) => {
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
+	let now = new Date();
+	let m = (1000*60*60*24);
+	for (let index=0;index<data.length;index++){
+		thet = Date.parse(data[index].day);
+		if(data[index].periodic=="TRUE" && !data[index].dubbed && (thet.getTime()-now.getTime())/m<=14){
+			
+			let thet2 = new Date(thet.getYear(), thet.getMonth(), thet.getDate());
+			thet2.setDate(thet.getDate()+7);
+			let day = thet2.getYear()+"-"+thet2.getMonth()+"-"+thet2.getDate();
+			let start = data[index].start;
+			let event_id = data[index].event_id;
+			let periodic = data[index].periodic;
+			const { error: insertError } = await supabase
+			.from('calendar_actions')
+			.insert([{ day, start, event_id, periodic }]);
+			
+			  if (insertError) {
+				console.error('Error fetching actions:', insertError);
+				res.status(500).send('Internal Server Error insert: '+insertError);
+				return;
+			  }
+			
+			const { error: insertError2 } = await supabase
+			.from('calendar_actions')
+			.update([{ dubbed: "TRUE" }]).eq("id", data[index].id);
+			
+			if (insertError2) {
+				console.error('Error fetching actions:', insertError2);
+				res.status(500).send('Internal Server Error update: '+insertError2);
+				return;
+			  }
+		}
+	}
+	
+	
 	
 	
     res.json(data);
@@ -1651,9 +1686,13 @@ app.get('/calendar/actions/:day', async (req, res) => {
      const { data: data, error } = await supabase
         .from('calendar_actions')
         .select(`
-		id, day, start, event_id, quantity, periodic,
+		id, day, start, event_id, quantity, periodic, dubbed,
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).eq("day", day).order('start', { ascending: true });
-
+	
+	
+	
+	
+	
     if (error) {
         console.error('Error fetching actions:', error);
         res.status(500).send('Internal Server Error: '+error);
