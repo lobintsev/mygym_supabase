@@ -1634,7 +1634,7 @@ app.patch('/calendar/periodic', async (req, res) => {
 		id, day, start, event_id, quantity, periodic, dubbed,
 		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('day', { ascending: true }).order('start', { ascending: true });
 	
-    if (error) {
+    if (true) {
         console.error('Error fetching actions:', error);
         res.status(500).send('Internal Server Error: '+error);
         return;
@@ -1647,8 +1647,6 @@ app.patch('/calendar/periodic', async (req, res) => {
 		thet = Date.parse(data[index].day);
 		
 		
-		res.status(500).send('Internal Server Error insert: '+(thet.getTime()-not.getTime()));
-				return;
 		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-not.getTime())/m<=14){
 		
 			thet.setDate(thet.getDate()+7);
