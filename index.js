@@ -1651,8 +1651,10 @@ app.patch('/calendar/periodic', async (req, res) => {
 
 		if(item.periodic && !item.dubbed && (await thet.getTime()- await now.getTime())/m<=14){
 
-			 await thet.setDate(await thet.getDate()+7);
-             const day = await thet.getYear()+"-"+await thet.getMonth()+"-"+await thet.getDate();
+
+             let thet2 = await new Date(thet);
+			 await thet2.setDate(await thet.getDate()+7);
+             const day = await thet2.getFullYear()+"-"+await (thet2.getMonth()+1)+"-"+await 2.getDate();
 			 const start = item.start;
              const event_id = item.event_id;
 
