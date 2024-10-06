@@ -1644,15 +1644,15 @@ app.get('/calendar/actions', async (req, res) => {
 	for (let index=0;index<data.length;index++){
 		thet = Date.parse(data[index].day);
 		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-now.getTime())/m<=14){
-			
+			res.status(500).send('TEST: '+index);
+			return;
 			thet.setDate(thet.getDate()+7);
 			let day = thet.getYear()+"-"+thet.getMonth()+"-"+thet.getDate();
 			let start = data[index].start;
 			let event_id = data[index].event_id;
 			let periodic = data[index].periodic;
 			
-			res.status(500).send('TEST: '+thet);
-			return;
+			
 			
 			
 			const { error: insertError } = await supabase
