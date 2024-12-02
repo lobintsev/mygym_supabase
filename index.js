@@ -493,7 +493,7 @@ app.post('/users/balance/:telegram_id/topup', async (req, res) => {
 
     if (transactionError) {
         console.error('Error creating transaction:', transactionError);
-        res.status(500).send('Internal Server Error');
+        res.status(500).send('Internal Server Error'+transactionError.toString());
         return;
     }
 
@@ -1560,16 +1560,16 @@ app.get('/calendar/events', async (req, res) => {
 app.post('/calendar/events', async (req, res) => {
     // #swagger.tags = ['Calendar']
 
-    const { name, shortdes, description, imageurl, duration, capacity } = req.body;
+    const { name, shortdes, description, imageurl, duration, capacity, price} = req.body;
 
-    if (!name || !shortdes || !description || !imageurl || !duration || !capacity) {
+    if (!name || !shortdes || !description || !imageurl || !duration || !capacity || !price) {
         res.status(400).send('Bad Request: Missing required fields: name: '+name+', shortdes: '+shortdes+', description: '+description+', imageurl: '+imageurl+', duration: '+duration+', capacity: '+capacity);
         return;
     }
 
     const { error: insertError } = await supabase
         .from('calendar_events')
-        .insert([{ name, shortdes, description, imageurl, duration, capacity }]);
+        .insert([{ name, shortdes, description, imageurl, duration, capacity, price}]);
     if (insertError) {
         console.error('Error creating events:', insertError);
         res.status(500).send('Internal Server Error: '+insertError);
@@ -1585,16 +1585,16 @@ app.post('/calendar/events', async (req, res) => {
 app.patch('/calendar/events/:event_id', async (req, res) => {
     // #swagger.tags = ['Calendar']
 	const event_id = req.params.event_id;
-    const { name, shortdes, description, imageurl, duration, capacity } = req.body;
+    const { name, shortdes, description, imageurl, duration, capacity, price } = req.body;
 
-    if (!name || !shortdes || !description || !imageurl || !duration || !capacity) {
+    if (!name || !shortdes || !description || !imageurl || !duration || !capacity || !price) {
         res.status(400).send('Bad Request: Missing required fields');
         return;
     }
 
     const { error: insertError } = await supabase
         .from('calendar_events')
-        .update([{ name, shortdes, description, imageurl, duration, capacity }]).eq("id", event_id);
+        .update([{ name, shortdes, description, imageurl, duration, capacity, price }]).eq("id", event_id);
     if (insertError) {
         console.error('Error updating events:', insertError);
         res.status(500).send('Internal Server Error: '+insertError);
@@ -1632,16 +1632,13 @@ app.patch('/calendar/periodic', async (req, res) => {
         .from('calendar_actions')
         .select(`
 		id, day, start, event_id, quantity, periodic, dubbed,
-		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('day', { ascending: true }).order('start', { ascending: true });
+		calendar_events(name, shortdes, description, imageurl, duration, capacity, price)`).order('day', { ascending: true }).order('start', { ascending: true });
 	
     if (error) {
         console.error('Error fetching actions:', error);
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
-
-
-
 
     const now = await new Date();
 	const m = 86400000;
@@ -1650,7 +1647,6 @@ app.patch('/calendar/periodic', async (req, res) => {
         let thet = await new Date(item.day);
 
 		if(item.periodic && !item.dubbed && (await thet.getTime()- await now.getTime())/m<=14){
-
 
              let thet2 = await new Date(thet);
 			 await thet2.setDate(await thet.getDate()+7);
@@ -1680,8 +1676,6 @@ app.patch('/calendar/periodic', async (req, res) => {
 		}
 	}
 
-    
-
     res.status(200).send('Successful patch periodic. Nyohoho!');
 });
 
@@ -1694,56 +1688,13 @@ app.get('/calendar/actions', async (req, res) => {
         .from('calendar_actions')
         .select(`
 		id, day, start, event_id, quantity, periodic, dubbed,
-		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).order('day', { ascending: true }).order('start', { ascending: true });
+		calendar_events(name, shortdes, description, imageurl, duration, capacity, price)`).order('day', { ascending: true }).order('start', { ascending: true });
 	
     if (error) {
         console.error('Error fetching actions:', error);
         res.status(500).send('Internal Server Error: '+error);
         return;
     }
-	/*let not = new Date();
-	let m = (1000*60*60*24);
-	for (let index=0;index<data.length;index++){
-		thet = Date.parse(data[index].day);
-		
-		
-		res.status(500).send('Internal Server Error insert: '+(thet.getTime()-not.getTime()));
-				return;
-		if(data[index].periodic && !data[index].dubbed && (thet.getTime()-not.getTime())/m<=14){
-		
-			thet.setDate(thet.getDate()+7);
-			let day = thet.getYear()+"-"+thet.getMonth()+"-"+thet.getDate();
-			let start = data[index].start;
-			let event_id = data[index].event_id;
-			let periodic = data[index].periodic;
-			
-			
-			
-			
-			const { error: insertError } = await supabase
-			.from('calendar_actions')
-			.insert([{ day, start, event_id, periodic }]);
-			
-			  if (insertError) {
-				console.error('Error fetching actions:', insertError);
-				res.status(500).send('Internal Server Error insert: '+insertError);
-				return;
-			  }
-			
-			const { error: insertError2 } = await supabase
-			.from('calendar_actions')
-			.update([{ dubbed: true }]).eq("id", data[index].id);
-			
-			if (insertError2) {
-				console.error('Error fetching actions:', insertError2);
-				res.status(500).send('Internal Server Error update: '+insertError2);
-				return;
-			  }
-		}
-	}*/
-	
-	
-	
 	
     res.json(data);
 });
@@ -1756,11 +1707,7 @@ app.get('/calendar/actions/:day', async (req, res) => {
         .from('calendar_actions')
         .select(`
 		id, day, start, event_id, quantity, periodic, dubbed,
-		calendar_events(name, shortdes, description, imageurl, duration, capacity)`).eq("day", day).order('start', { ascending: true });
-	
-	
-	
-	
+		calendar_events(name, shortdes, description, imageurl, duration, capacity, price)`).eq("day", day).order('start', { ascending: true });
 	
     if (error) {
         console.error('Error fetching actions:', error);
@@ -1866,6 +1813,8 @@ app.get('/calendar/records/action/:user_id', async (req, res) => {
         .select(`created_at, action_id, calendar_actions(day, start, quantity)`).eq("user_id", user_id);
 
 
+
+
     if (error) {
         console.error('Error fetching records:', error);
         res.status(500).send('Internal Server Error a', error);
@@ -1881,7 +1830,57 @@ app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
 	  
 	const action_id = req.params.action_id;
 	const user_id = req.params.user_id;
-	
+
+    /*const { data: eventData, error } = await supabase
+        .from('calendar_actions')
+        .select(`event_id, calendar_events(price)`).eq("action_id", action_id);
+
+    if(error || !eventData){
+        console.error('Error fetching actions:', error);
+        res.status(500).send('Internal Server Error (fetching actions)', error);
+        return;
+    }
+    const amount = eventData.calendar_events.price;
+
+    //Создать транзакцию
+    const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert([{ user_id, amount, type: 'WITH' }]);
+
+    if (transactionError) {
+        console.error('Error creating transaction:', transactionError);
+        res.status(500).send('Internal Server Error (fetching transactions)');
+        return;
+    }
+
+    // Проверьте, существует ли запись balance для user_id
+    const { data: balanceData, error: balanceCheckError } = await supabase
+        .from('balance')
+        .select('user_id')
+        .eq('user_id', user_id);
+
+    if (balanceCheckError || !balanceData || balanceData.length === 0) {
+        const { error: balanceCreateError } = await supabase
+            .from('balance')
+            .insert([{ user_id, amount: -amount }]);
+
+        if (balanceCreateError) {
+            console.error('Error creating balance:', balanceCreateError);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+    } else {
+        // Обновите запись в таблице balance для user_id, если запись уже существует
+        const { error: balanceUpdateError } = await supabase
+            .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(-amount) });
+
+        if (balanceUpdateError) {
+            console.error('Error updating balance:', balanceUpdateError);
+            res.status(500).send('Internal Server Error');
+            return;
+        }
+    }*/
+
     const { error: insertError } = await supabase
         .from('calendar_records')
         .insert([{ action_id, user_id}]);
@@ -1890,7 +1889,6 @@ app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
         res.status(500).send('Internal Server Error: '+insertError);
         return;
     }
-
     
 
     res.status(201).send('Successful insert record. Nyohoho!');
