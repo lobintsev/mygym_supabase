@@ -480,7 +480,7 @@ app.post('/users/balance/:telegram_id/topup', async (req, res) => {
 
     if (userError || !userData || userData.length === 0) {
         console.error('Error fetching user:', userError || 'User not found');
-        res.status(500).send('Internal Server Error');
+        res.status(500).send('Internal Server Error ('+userError);
         return;
     }
 
@@ -493,7 +493,7 @@ app.post('/users/balance/:telegram_id/topup', async (req, res) => {
 
     if (transactionError) {
         console.error('Error creating transaction:', transactionError);
-        res.status(500).send('Internal Server Error'+transactionError.toString());
+        res.status(500).send('Internal Server Error ('+transactionError.toString());
         return;
     }
 
@@ -520,7 +520,7 @@ app.post('/users/balance/:telegram_id/topup', async (req, res) => {
 
         if (balanceUpdateError) {
             console.error('Error updating balance:', balanceUpdateError);
-            res.status(500).send('Internal Server Error');
+            res.status(500).send('Internal Server Error ('+balanceUpdateError);
             return;
         }
     }
