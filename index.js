@@ -1675,6 +1675,17 @@ app.patch('/calendar/periodic', async (req, res) => {
 			  }
 		}
 	}
+    const nowdate = new Date();
+    nowdate.setDate(nowdate.getDate()-3);
+    const { data: actionData, actionError } = await supabase
+        .from('calendar_actions')
+        .delete().lte('day', nowdate.toLocaleString().substr(0, 10));
+
+    if (actionError) {
+        console.error('Error delete actions:', actionError);
+        res.status(500).send('Internal Server Error (delete actions): '+actionError);
+        return;
+    }
 
     res.status(200).send('Successful patch periodic. Nyohoho!');
 });
