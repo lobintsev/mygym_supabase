@@ -1831,18 +1831,55 @@ app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
 	const action_id = req.params.action_id;
 	const user_id = req.params.user_id;
 
-    /*const { data: eventData, error } = await supabase
+    //Проверяем, не записан ли пользователь уже на данное занятие
+    const { data: selectData, error: selectError } = await supabase
+        .from('calendar_records')
+        .select('user_id, action_id')
+        .eq('user_id', user_id)
+        .eq('action_id', action_id);
+    if (selectError || selectData || selectData.length!=0) {
+        if(selectError) {
+            console.error('Error fetching records:', selectError);
+        }
+        res.status(500).send('Internal Server Error (Records 1): ');
+        return;
+    }
+
+    //Получаем цену записи на занятие
+    const { data: eventData, error } = await supabase
         .from('calendar_actions')
         .select(`event_id, calendar_events(price)`).eq("action_id", action_id);
 
     if(error || !eventData){
         console.error('Error fetching actions:', error);
-        res.status(500).send('Internal Server Error (fetching actions)', error);
+        res.status(500).send('Internal Server Error (fetching action price)', error);
         return;
     }
-    const amount = eventData.calendar_events.price;
+    const amount = eventData[0].calendar_events.price;
 
-    //Создать транзакцию
+
+
+    // Проверяем баланс
+    const { data: balanceData, error: balanceCheckError } = await supabase
+        .from('balance')
+        .select('user_id, amount')
+        .eq('user_id', user_id);
+
+    if (balanceCheckError || !balanceData || balanceData.length == 0 || balanceData[0].amount < amount) {
+        console.error('Error updating balance:', balanceCheckError);
+        res.status(500).send('Internal Server Error (Balance check)');
+    }
+    // Обновить запись в таблице balance для user_id
+    const { error: balanceUpdateError } = await supabase
+        .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(-amount) });
+
+    if (balanceUpdateError) {
+        console.error('Error updating balance:', balanceUpdateError);
+        res.status(500).send('Internal Server Error (Balance update)');
+        return;
+    }
+
+    //Создать транзакцию СПИСЫВАНИЯ денег с баланса
     const { error: transactionError } = await supabase
         .from('transactions')
         .insert([{ user_id, amount, type: 'WITH' }]);
@@ -1853,34 +1890,7 @@ app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
         return;
     }
 
-    // Проверьте, существует ли запись balance для user_id
-    const { data: balanceData, error: balanceCheckError } = await supabase
-        .from('balance')
-        .select('user_id')
-        .eq('user_id', user_id);
-
-    if (balanceCheckError || !balanceData || balanceData.length === 0) {
-        const { error: balanceCreateError } = await supabase
-            .from('balance')
-            .insert([{ user_id, amount: -amount }]);
-
-        if (balanceCreateError) {
-            console.error('Error creating balance:', balanceCreateError);
-            res.status(500).send('Internal Server Error');
-            return;
-        }
-    } else {
-        // Обновите запись в таблице balance для user_id, если запись уже существует
-        const { error: balanceUpdateError } = await supabase
-            .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(-amount) });
-
-        if (balanceUpdateError) {
-            console.error('Error updating balance:', balanceUpdateError);
-            res.status(500).send('Internal Server Error');
-            return;
-        }
-    }*/
-
+    //Записываем пользователя на занятие
     const { error: insertError } = await supabase
         .from('calendar_records')
         .insert([{ action_id, user_id}]);
@@ -1899,7 +1909,67 @@ app.delete('/calendar/records/:action_id/:user_id', async (req, res) => {
     // #swagger.tags = ['Calendar']
 	const action_id = req.params.action_id;
 	const user_id = req.params.user_id;
-	
+
+    //Проверяем, записан ли пользователь на данное занятие
+    const { data: selectData, error: selectError } = await supabase
+        .from('calendar_records')
+        .select('user_id, action_id')
+        .eq('user_id', user_id)
+        .eq('action_id', action_id);
+    if (selectError || !selectData || selectData.length==0) {
+        if(selectError) {
+            console.error('Error fetching records:', selectError);
+        }
+        res.status(500).send('Internal Server Error (Records 1): ');
+        return;
+    }
+
+
+    //Получаем цену записи на занятие
+    const { data: eventData, error } = await supabase
+        .from('calendar_actions')
+        .select(`event_id, calendar_events(price)`).eq("action_id", action_id);
+
+    if(error || !eventData){
+        console.error('Error fetching actions:', error);
+        res.status(500).send('Internal Server Error (fetching action price)', error);
+        return;
+    }
+    const amount = eventData[0].calendar_events.price;
+
+    // Проверяем баланс
+    const { data: balanceData, error: balanceCheckError } = await supabase
+        .from('balance')
+        .select('user_id, amount')
+        .eq('user_id', user_id);
+
+    if (balanceCheckError || !balanceData || balanceData.length == 0) {
+        console.error('Error updating balance:', balanceCheckError);
+        res.status(500).send('Internal Server Error (Balance check)');
+    }
+    // Обновить запись в таблице balance для user_id
+    const { error: balanceUpdateError } = await supabase
+        .rpc('update_balance', { p_user_id: Number(user_id), p_amount: Number(amount) });
+
+    if (balanceUpdateError) {
+        console.error('Error updating balance:', balanceUpdateError);
+        res.status(500).send('Internal Server Error (Balance update)');
+        return;
+    }
+
+    //Создать транзакцию ВОЗВРАТА денег с баланса
+    const { error: transactionError } = await supabase
+        .from('transactions')
+        .insert([{ user_id, amount, type: 'DEP' }]);
+
+    if (transactionError) {
+        console.error('Error creating transaction:', transactionError);
+        res.status(500).send('Internal Server Error (fetching transactions)');
+        return;
+    }
+
+
+    //Отписываем пользователя от занятия
     const { error: insertError } = await supabase
         .from('calendar_records')
         .delete().eq("action_id", action_id).eq("user_id", user_id);
