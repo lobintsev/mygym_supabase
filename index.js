@@ -1849,7 +1849,7 @@ app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
     //Получаем цену записи на занятие
     const { data: eventData, error } = await supabase
         .from('calendar_actions')
-        .select(`event_id, calendar_events(price)`).eq("action_id", action_id);
+        .select(`id, event_id, calendar_events(price)`).eq("id", action_id);
 
     if(error || !eventData){
         console.error('Error fetching actions:', error);
@@ -1929,7 +1929,7 @@ app.delete('/calendar/records/:action_id/:user_id', async (req, res) => {
     //Получаем цену записи на занятие
     const { data: eventData, error } = await supabase
         .from('calendar_actions')
-        .select(`event_id, calendar_events(price)`).eq("action_id", action_id);
+        .select(`id, event_id, calendar_events(price)`).eq("id", action_id);
 
     if(error || !eventData){
         console.error('Error fetching actions:', error);
