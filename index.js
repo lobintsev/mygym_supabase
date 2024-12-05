@@ -1837,10 +1837,11 @@ app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
         .select('user_id, action_id')
         .eq('user_id', user_id)
         .eq('action_id', action_id);
-    if (selectError || selectData || selectData.length!=0) {
+    if (selectError || !selectData || selectData.length!=0) {
         if(selectError) {
             console.error('Error fetching records:', selectError);
         }
+
         res.status(500).send('Internal Server Error (Records 1): ');
         return;
     }
