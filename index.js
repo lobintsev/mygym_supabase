@@ -1675,6 +1675,7 @@ app.patch('/calendar/periodic', async (req, res) => {
 			  }
 		}
 	}
+
     const nowdate = new Date();
     nowdate.setDate(nowdate.getDate()-3);
     const { data: actionData, actionError } = await supabase
@@ -1880,6 +1881,7 @@ app.post('/calendar/records/:action_id/:user_id', async (req, res) => {
     if (balanceCheckError || !balanceData || balanceData.length == 0 || balanceData[0].amount < amount) {
         console.error('Error updating balance:', balanceCheckError);
         res.status(500).send('Internal Server Error (Balance check)');
+        return;
     }
     // Обновить запись в таблице balance для user_id
     const { error: balanceUpdateError } = await supabase
@@ -1958,6 +1960,7 @@ app.delete('/calendar/records/:action_id/:user_id', async (req, res) => {
     if (balanceCheckError || !balanceData || balanceData.length == 0) {
         console.error('Error updating balance:', balanceCheckError);
         res.status(500).send('Internal Server Error (Balance check)');
+        return;
     }
     // Обновить запись в таблице balance для user_id
     const { error: balanceUpdateError } = await supabase
