@@ -1,6 +1,7 @@
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
+const { storageClient } = require('@supabase/storage-js');
 const { createClient } = require('@supabase/supabase-js');
 const toggleDevice = require('./toggleDevice');
 const listDevices = require('./src/helpers/alice/listDevices');
@@ -22,6 +23,13 @@ app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 //process.env.SUPABASE_URL = "https://akhdzgwtzroydiqlepey.supabase.co";
 //process.env.SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraGR6Z3d0enJveWRpcWxlcGV5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTUzMTA5MzQsImV4cCI6MjAxMDg4NjkzNH0.BWtFS5A4hI5oRVKM695pwnvMHCoVGRDRznvnj9fZqWg";
+
+const STORAGE_URL = 'https://akhdzgwtzroydiqlepey.supabase.co/storage/v1';
+const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraGR6Z3d0enJveWRpcWxlcGV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NTMxMDkzNCwiZXhwIjoyMDEwODg2OTM0fQ.JDX-9zmipaJ28AxVCf6acSyHzDFt5SyN6OrSOG9H5r8';
+const storage = new storageClient(STORAGE_URL, {
+    apikey: SERVICE_KEY,
+    Authorization: `Bearer ${SERVICE_KEY}`,
+});
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -818,6 +826,33 @@ app.patch('/users/subscriptions/:telegram_id', async (req, res) => {
     console.log(actionsQueryResult);
     res.json(actionsQueryResult);
 });
+
+app.post('/users/:user_id/avatar', async (req, res) => {
+    // #swagger.tags = ['Users']
+    const user_id = req.user_id;
+    const image = req.body.image;
+
+
+
+    // Проверка входных данных
+    if (!image || !user_id) {
+        res.status(400).send('Bad Request: Invalid image or user_id');
+        return;
+    }
+
+    const { data: uploadData, error: uploadError } = await storage.from('profiles').upload('/images/u'+user_id+"_avatar.png", fileBody);
+
+    if(uploadError){
+        res.status(400).send('Error upload file');
+        return;
+    }
+
+    res.status(201).send('Avatar update successful!');
+});
+
+
+
+
 
 //LOCATIONS
 
@@ -1996,7 +2031,6 @@ app.delete('/calendar/records/:action_id/:user_id', async (req, res) => {
 
     res.status(201).send('Successful delete record. Nyohoho!');
 });
-
 
 //WEBHOOKS
 
