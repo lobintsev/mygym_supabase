@@ -214,16 +214,25 @@ app.delete('/users/:id', async (req, res) => {
 app.patch('/users/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
-    const { first_name, last_name, telegram_nickname, phone, email, role, status } = req.body;
+    const first_name = req.body.first_name;
+    const last_name = req.body.last_name;
+    const telegram_nickname = req.body.telegram_nickname;
+    const phone = req.body.phonw;
+    const email = req.body.email;
+    const role = req.body.role;
+    const status = req.body.status;
+    const gender = req.body.gender;
+    const birth = req.body.birth;
 
-    if (!first_name && !last_name && !telegram_nickname && !phone && !role) {
+
+    if (!first_name && !last_name && !telegram_nickname && !phone && !email && !role && !status && !gender && !birth) {
         res.status(400).send('Bad Request: No fields to update');
         return;
     }
 
     const { error: updateError } = await supabase
         .from('users')
-        .update({ first_name, last_name, telegram_nickname, phone, email, role, status })
+        .update({ first_name, last_name, telegram_nickname, phone, email, role, status, gender, birth })
         .eq('telegram_id', telegram_id);
 
     if (updateError) {
