@@ -1,7 +1,7 @@
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
-const { storageClient } = require('@supabase/storage-js');
+//const { storageClient } = require('@supabase/storage-js');
 const { createClient } = require('@supabase/supabase-js');
 const toggleDevice = require('./toggleDevice');
 const listDevices = require('./src/helpers/alice/listDevices');
@@ -26,10 +26,10 @@ app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 const STORAGE_URL = 'https://akhdzgwtzroydiqlepey.supabase.co/storage/v1';
 const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFraGR6Z3d0enJveWRpcWxlcGV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5NTMxMDkzNCwiZXhwIjoyMDEwODg2OTM0fQ.JDX-9zmipaJ28AxVCf6acSyHzDFt5SyN6OrSOG9H5r8';
-const storage = new storageClient(STORAGE_URL, {
+/*const storage = new storageClient(STORAGE_URL, {
     apikey: SERVICE_KEY,
     Authorization: `Bearer ${SERVICE_KEY}`,
-});
+});*/
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
@@ -214,15 +214,7 @@ app.delete('/users/:id', async (req, res) => {
 app.patch('/users/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
     const telegram_id = req.params.telegram_id;
-    const first_name = req.body.first_name;
-    const last_name = req.body.last_name;
-    const telegram_nickname = req.body.telegram_nickname;
-    const phone = req.body.phone;
-    const email = req.body.email;
-    const role = req.body.role;
-    const status = req.body.status;
-    const gender = req.body.gender;
-    const birth = req.body.birth;
+    const {first_name, last_name, telegram_nickname, phone, email, role, status, gender, birth} = req.body;
 
 
     if (!first_name && !last_name && !telegram_nickname && !phone && !email && !role && !status && !gender && !birth) {
@@ -836,7 +828,7 @@ app.patch('/users/subscriptions/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult);
 });
 
-app.post('/users/:user_id/avatar', async (req, res) => {
+/*app.post('/users/:user_id/avatar', async (req, res) => {
     // #swagger.tags = ['Users']
     const user_id = req.user_id;
     const image = req.body.image;
@@ -858,7 +850,7 @@ app.post('/users/:user_id/avatar', async (req, res) => {
 
     res.status(201).send('Avatar update successful!');
 });
-
+*/
 
 
 
