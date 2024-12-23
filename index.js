@@ -213,16 +213,7 @@ app.delete('/users/:id', async (req, res) => {
 
 app.patch('/users/:telegram_id', async (req, res) => {
     // #swagger.tags = ['Users']
-    const telegram_id = req.params.telegram_id;
-    const first_name = req.body.first_name;
-    const last_name = req.body.last_name;
-    const telegram_nickname = req.body.telegram_nickname;
-    const phone = req.body.phone;
-    const email = req.body.email;
-    const role = req.body.role;
-    const status = req.body.status;
-    const gender = req.body.gender;
-    const birth = req.body.birth;
+    const {telegram_id, first_name, last_name, telegram_nickname, phone, email, role, status, gender, birth} = req.body;
 
 
     if (!first_name && !last_name && !telegram_nickname && !phone && !email && !role && !status && !gender && !birth) {
