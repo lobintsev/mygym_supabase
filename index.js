@@ -831,7 +831,7 @@ app.patch('/users/subscriptions/:telegram_id', async (req, res) => {
 
 app.post('/users/:user_id/avatar', async (req, res) => {
     // #swagger.tags = ['Users']
-    const user_id = req.user_id;
+    const user_id = req.params.user_id;
     const image = req.body.image;
 
 
