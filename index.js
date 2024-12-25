@@ -837,8 +837,8 @@ app.post('/users/:user_id/avatar', async (req, res) => {
 
 
     // Проверка входных данных
-    if (!image || !user_id) {
-        res.status(400).send('Bad Request: Invalid image or user_id');
+    if (!user_id) {
+        res.status(400).send('Bad Request: Invalid user_id');
         return;
     }
 
