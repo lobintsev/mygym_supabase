@@ -19,6 +19,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.options("*", cors());
 app.use(express.json());
+app.use(express.urlencoded({limit: "10mb", extended: true, parameterLimit: 50000}))
 app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 //process.env.SUPABASE_URL = "https://akhdzgwtzroydiqlepey.supabase.co";
