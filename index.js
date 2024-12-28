@@ -842,7 +842,7 @@ app.post('/users/:user_id/avatar', async (req, res) => {
         return;
     }
 
-    const { data: uploadData, error: uploadError } = await storage.from('profiles').upload('/images/u'+user_id+"_avatar.png", fileBody);
+    const { data: uploadData, error: uploadError } = await storage.from('profiles').upload('/images/u'+user_id+"_avatar.png", image);
 
     if(uploadError){
         res.status(400).send('Error upload file');
