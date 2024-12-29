@@ -1,6 +1,8 @@
 const express = require('express');
 require('dotenv').config();
 const cors = require('cors');
+const multer = require("multer");
+const { decode } = require('base64-arraybuffer');
 const { StorageClient } = require('@supabase/storage-js');
 const { createClient } = require('@supabase/supabase-js');
 const toggleDevice = require('./toggleDevice');
@@ -16,10 +18,13 @@ const slowDown = require("express-slow-down");
 
 const app = express();
 const port = process.env.PORT || 3000;
+const memoryStorage = multer.memoryStorage();
+const upload = multer({storage: memoryStorage});
 app.use(cors());
 app.options("*", cors());
 app.use(express.json());
 app.use(express.urlencoded({limit: "10mb", extended: true, parameterLimit: 50000}))
+
 app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
 //process.env.SUPABASE_URL = "https://akhdzgwtzroydiqlepey.supabase.co";
@@ -829,12 +834,12 @@ app.patch('/users/subscriptions/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult);
 });
 
-app.post('/users/:user_id/avatar', async (req, res) => {
+app.post('/users/:user_id/avatar', upload.single('image'), async (req, res) => {
     // #swagger.tags = ['Users']
     const user_id = req.params.user_id;
-    const image = req.body.image;
+    const image = req.image;
 
-
+    const fileBase64 = decode(image.buffer.toString('base64'));
 
     // Проверка входных данных
     if (!user_id) {
@@ -842,7 +847,7 @@ app.post('/users/:user_id/avatar', async (req, res) => {
         return;
     }
 
-    const { data: uploadData, error: uploadError } = await storage.from('profiles').upload('/images/u'+user_id+"_avatar.png", image);
+    const { data: uploadData, error: uploadError } = await storage.from('profiles').upload('/images/u'+user_id+"_avatar.jpg", fileBase64, {upsert:true, contentType: 'image/png'});
 
     if(uploadError){
         res.status(400).send('Error upload file');
