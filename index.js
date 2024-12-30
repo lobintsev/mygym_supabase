@@ -23,7 +23,7 @@ const upload = multer({storage: memoryStorage});
 app.use(cors());
 app.options("*", cors());
 app.use(express.json());
-app.use(express.urlencoded({limit: "10mb", extended: true, parameterLimit: 50000}))
+app.use(express.urlencoded({extended: true}))
 
 app.use('/doc', swaggerUi.serve, swaggerUi.setup(swaggerFile));
 
@@ -834,12 +834,12 @@ app.patch('/users/subscriptions/:telegram_id', async (req, res) => {
     res.json(actionsQueryResult);
 });
 
-app.post('/users/:user_id/avatar', upload.single('image'), async (req, res) => {
+app.post('/users/:user_id/avatar', upload.single('file'), async (req, res) => {
     // #swagger.tags = ['Users']
     const user_id = req.params.user_id;
-    const image = req.image;
+    const file = req.file;
 
-    const fileBase64 = decode(image.buffer.toString('base64'));
+    const fileBase64 = decode(file.buffer.toString('base64'));
 
     // Проверка входных данных
     if (!user_id) {
