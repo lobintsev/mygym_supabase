@@ -847,7 +847,7 @@ app.post('/users/:user_id/avatar', upload.single('image'), async (req, res) => {
         return;
     }
 
-    const { data: uploadData, error: uploadError } = await storage.from('profiles').upload('/images/u'+user_id+"_avatar.jpg", fileBase64, {upsert:true, contentType: 'image/jpg'});
+    const { data: uploadData, error: uploadError } = await storage.from('profiles').upload('/images/u'+user_id+"_avatar.jpg", fileBase64, {upsert:true});
 
     if(uploadError){
         res.status(400).send('Error upload file');
