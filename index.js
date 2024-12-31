@@ -227,10 +227,37 @@ app.patch('/users/:telegram_id', async (req, res) => {
         res.status(400).send('Bad Request: No fields to update');
         return;
     }
-
+    let obj = {};
+    if (first_name){
+        obj.first_name=first_name;
+    }
+    if (last_name){
+        obj.last_name=last_name;
+    }
+    if (telegram_nickname){
+        obj.telegram_nickname=telegram_nickname;
+    }
+    if (phone){
+        obj.phone=phone;
+    }
+    if(email){
+        obj.email=email;
+    }
+    if(role){
+        obj.role=role;
+    }
+    if(status){
+        obj.status=status;
+    }
+    if(gender){
+        obj.gender=gender;
+    }
+    if(birth){
+        obj.birth=birth;
+    }
     const { error: updateError } = await supabase
         .from('users')
-        .update({ first_name, last_name, telegram_nickname, phone, email, role, status, gender, birth })
+        .update(obj)
         .eq('telegram_id', telegram_id);
 
     if (updateError) {
